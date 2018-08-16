@@ -56,21 +56,21 @@ if __name__ == "__main__":
     from torch.autograd import Variable
     from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
 
-    labelled, unlabelled, validation = get_mnist(location="./", batch_size=100, labels_per_class=10)
+    labelled, unlabelled, validation = get_mnist(location="./", batch_size=100, labels_per_class=100)
     alpha = 0.1 * len(unlabelled) / len(labelled)
 
     models = []
 
     # Kingma 2014, M2 model. Reported: 88%, achieved: ??%
-    # from models import DeepGenerativeModel
-    # models += [DeepGenerativeModel([784, n_labels, 50, [600, 600]])]
+    from models import DeepGenerativeModel
+    models += [DeepGenerativeModel([784, n_labels, 50, [600, 600]])]
 
-    # Maaløe 2016, ADGM model. Reported: 99.4%, achieved: ??%
+    # Maale 2016, ADGM model. Reported: 99.4%, achieved: ??%
     # from models import AuxiliaryDeepGenerativeModel
     # models += [AuxiliaryDeepGenerativeModel([784, n_labels, 100, 100, [500, 500]])]
 
-    from models import LadderDeepGenerativeModel
-    models += [LadderDeepGenerativeModel([784, n_labels, [32, 16, 8], [128, 128, 128]])]
+    #from models import LadderDeepGenerativeModel
+    #models += [LadderDeepGenerativeModel([784, n_labels, [32, 16, 8], [128, 128, 128]])]
 
     for model in models:
         if cuda: model = model.cuda()
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         beta = DeterministicWarmup(n=4*len(unlabelled)*100)
         sampler = ImportanceWeightedSampler(mc=1, iw=1)
 
-        elbo = SVI(model, likelihood=binary_cross_entropy, beta=beta, sampler=sampler)
+        elbo = SVI(model, likelihood=binary_cross_entropy, sampler=sampler) #,beta=beta)
         optimizer = torch.optim.Adam(model.parameters(), lr=3e-4, betas=(0.9, 0.999))
 
         epochs = 251
@@ -120,8 +120,8 @@ if __name__ == "__main__":
                 accuracy += torch.mean((pred_idx.data == lab_idx.data).float())
 
             m = len(unlabelled)
-            print(*(total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m), sep="\t", file=file)
-
+            #print((total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m), sep="\t", file=file)
+            print("Total Loss {}, Labelled Loss {}, unlabelled loss {}, acc {}".format(total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m))
             if epoch % 1 == 0:
                 model.eval()
                 print("Epoch: {}".format(epoch))
@@ -154,7 +154,7 @@ if __name__ == "__main__":
                     accuracy += torch.mean((pred_idx.data == lab_idx.data).float())
 
                 m = len(validation)
-                print(*(total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m), sep="\t", file=file)
+                #print(*(total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m), sep="\t", file=file)
                 print("[Validation]\t J_a: {:.2f}, L: {:.2f}, U: {:.2f}, accuracy: {:.2f}".format(total_loss / m,
                                                                                               labelled_loss / m,
                                                                                               unlabelled_loss / m,

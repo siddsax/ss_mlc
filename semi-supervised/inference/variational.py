@@ -33,7 +33,7 @@ class ImportanceWeightedSampler(object):
 class DeterministicWarmup(object):
     """
     Linear deterministic warm-up as described in
-    [Sønderby 2016].
+    [Sonderby 2016].
     """
     def __init__(self, n=100, t_max=1):
         self.t = 0

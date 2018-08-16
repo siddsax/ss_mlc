@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -36,8 +38,8 @@ class Encoder(nn.Module):
 
         Attempts to infer the probability distribution
         p(z|x) from the data by fitting a variational
-        distribution q_φ(z|x). Returns the two parameters
-        of the distribution (µ, log σ²).
+        distribution q_phi(z|x). Returns the two parameters
+        of the distribution (mu, log sig_sq).
 
         :param dims: dimensions of the networks
            given by the number of neurons on the form
@@ -46,7 +48,13 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         [x_dim, h_dim, z_dim] = dims
-        neurons = [x_dim, *h_dim]
+        #print(dims)
+	#print(x_dim)
+	#print(h_dim)
+	#print("="*100)
+	neurons = [x_dim] + h_dim
+	#print(neurons)
+	#exit()
         linear_layers = [nn.Linear(neurons[i-1], neurons[i]) for i in range(1, len(neurons))]
 
         self.hidden = nn.ModuleList(linear_layers)
@@ -65,7 +73,7 @@ class Decoder(nn.Module):
 
         Generates samples from the original distribution
         p(x) by transforming a latent representation, e.g.
-        by finding p_θ(x|z).
+        by finding p_theta(x|z).
 
         :param dims: dimensions of the networks
             given by the number of neurons on the form
@@ -74,8 +82,8 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
 
         [z_dim, h_dim, x_dim] = dims
-
-        neurons = [z_dim, *h_dim]
+	#print("="*100)
+        neurons = [z_dim] + h_dim
         linear_layers = [nn.Linear(neurons[i-1], neurons[i]) for i in range(1, len(neurons))]
         self.hidden = nn.ModuleList(linear_layers)
 
@@ -184,10 +192,11 @@ class GumbelAutoencoder(nn.Module):
         [x_dim, z_dim, h_dim] = dims
         self.z_dim = z_dim
         self.n_samples = n_samples
-
-        self.encoder = Perceptron([x_dim, *h_dim])
+	print("="*100)
+        self.encoder = Perceptron([x_dim, h_dim])
         self.sampler = GumbelSoftmax(h_dim[-1], z_dim, n_samples)
-        self.decoder = Perceptron([z_dim, *reversed(h_dim), x_dim], output_activation=F.sigmoid)
+        print("="*100)
+	self.decoder = Perceptron([z_dim, reversed(h_dim), x_dim], output_activation=F.sigmoid)
 
         self.kl_divergence = 0
 
@@ -294,7 +303,8 @@ class LadderVariationalAutoencoder(VariationalAutoencoder):
         [x_dim, z_dim, h_dim] = dims
         super(LadderVariationalAutoencoder, self).__init__([x_dim, z_dim[0], h_dim])
 
-        neurons = [x_dim, *h_dim]
+        print("="*100)
+	neurons = [x_dim, h_dim]
         encoder_layers = [LadderEncoder([neurons[i - 1], neurons[i], z_dim[i - 1]]) for i in range(1, len(neurons))]
         decoder_layers = [LadderDecoder([z_dim[i - 1], h_dim[i - 1], z_dim[i]]) for i in range(1, len(h_dim))][::-1]
 
@@ -319,7 +329,8 @@ class LadderVariationalAutoencoder(VariationalAutoencoder):
         latents = list(reversed(latents))
 
         self.kl_divergence = 0
-        for i, decoder in enumerate([-1, *self.decoder]):
+        print("="*100)
+	for i, decoder in enumerate([-1, self.decoder]):
             # If at top, encoder == decoder,
             # use prior for KL.
             l_mu, l_log_var = latents[i]

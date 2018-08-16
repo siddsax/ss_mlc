@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -183,8 +184,8 @@ class LadderDeepGenerativeModel(DeepGenerativeModel):
         """
         [x_dim, y_dim, z_dim, h_dim] = dims
         super(LadderDeepGenerativeModel, self).__init__([x_dim, y_dim, z_dim[0], h_dim])
-
-        neurons = [x_dim, *h_dim]
+	#print("="*100)
+        neurons = [x_dim] +  h_dim
         encoder_layers = [LadderEncoder([neurons[i - 1], neurons[i], z_dim[i - 1]]) for i in range(1, len(neurons))]
 
         e = encoder_layers[-1]
@@ -218,20 +219,22 @@ class LadderDeepGenerativeModel(DeepGenerativeModel):
         latents = list(reversed(latents))
 
         self.kl_divergence = 0
-        for i, decoder in enumerate([-1, *self.decoder]):
+        print("="*100)
+	print(self.decoder)
+	#for i, decoder in enumerate([-1 , *self.decoder]):
             # If at top, encoder == decoder,
             # use prior for KL.
-            l_mu, l_log_var = latents[i]
-            if i == 0:
-                self.kl_divergence += self._kld(z, (l_mu, l_log_var))
+        #    l_mu, l_log_var = latents[i]
+        #    if i == 0:
+        #        self.kl_divergence += self._kld(z, (l_mu, l_log_var))
 
             # Perform downword merge of information.
-            else:
-                z, kl = decoder(z, l_mu, l_log_var)
-                self.kl_divergence += self._kld(*kl)
+        #    else:
+        #        z, kl = decoder(z, l_mu, l_log_var)
+        #        self.kl_divergence += self._kld(*kl)
 
-        x_mu = self.reconstruction(torch.cat([z, y], dim=1))
-        return x_mu
+        #x_mu = self.reconstruction(torch.cat([z, y], dim=1))
+        #return x_mu
 
     def sample(self, z, y):
         for i, decoder in enumerate(self.decoder):
