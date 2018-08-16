@@ -1,0 +1,5 @@
+Origin : Reached an acc. of 97 with 100 data pt per label on validation set, 
+supervised had 91i [17ish 95, 36ish 96 115ish 97], batch size was 100.
+
+Removed importance sampling, changed lr from 3e-4 and beta part removed. No change in acc.
+

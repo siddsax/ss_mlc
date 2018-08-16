@@ -63,10 +63,10 @@ if __name__ == "__main__":
     model = DeepGenerativeModel([784, n_labels, 50, [600, 600]])
     if cuda: model = model.cuda()
 
-    sampler = ImportanceWeightedSampler(mc=1, iw=1)
+    # sampler = ImportanceWeightedSampler(mc=1, iw=1)
 
     elbo = SVI(model, likelihood=binary_cross_entropy)#, sampler=sampler) #,beta=beta)
-    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4, betas=(0.9, 0.999))
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)#, lr=3e-4, betas=(0.9, 0.999))
 
     epochs = 251
     best = 0.0
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         if epoch % 1 == 0:
             model.eval()
             print("Epoch: {}".format(epoch))
-            print("[Train]\t\t J_a: {:.2f}, L: {:.2f}, U: {:.2f}, accuracy: {:.2f}".format(total_loss / m,
+            print("[Train]\t\t J_a: {:.2f}, L: {:.2f}, U: {:.2f}, accuracy: {:.5f}".format(total_loss / m,
                                                                                             labelled_loss / m,
                                                                                             unlabelled_loss / m,
                                                                                             accuracy / m))
@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
             m = len(validation)
             #print(*(total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m), sep="\t", file=file)
-            print("[Validation]\t J_a: {:.2f}, L: {:.2f}, U: {:.2f}, accuracy: {:.2f}".format(total_loss / m,
+            print("[Validation]\t J_a: {:.2f}, L: {:.2f}, U: {:.2f}, accuracy: {:.5f}".format(total_loss / m,
                                                                                             labelled_loss / m,
                                                                                             unlabelled_loss / m,
                                                                                             accuracy / m))

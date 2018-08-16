@@ -84,7 +84,6 @@ class SVI(nn.Module):
         # Increase sampling dimension
         xs = self.sampler.resample(xs)
         ys = self.sampler.resample(ys)
-
         reconstruction = self.model(xs, ys)
 
         # p(x|y,z)
