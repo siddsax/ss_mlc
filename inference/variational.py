@@ -70,43 +70,6 @@ class SVI(nn.Module):
         self.sampler = sampler
         self.beta = beta
 
-
-    # def forward(self, x, y=None, temp=None):
-    #     is_labelled = False if y is None else True
-
-    #     # Prepare for sampling
-    #     xs, ys = (x, y)
-
-    #     # Enumerate choices of label
-    #     if not is_labelled:
-    #         ys = enumerate_discrete(xs, self.model.y_dim)
-    #         xs = xs.repeat(self.model.y_dim, 1)
-
-    #     reconstruction = self.model(xs, ys)
-
-    #     # p(x|y,z)
-    #     likelihood = -self.likelihood(reconstruction, xs)
-
-    #     # p(y)
-    #     prior = -log_standard_categorical(ys)
-
-    #     # Equivalent to -L(x, y)
-    #     L = likelihood + prior - next(self.beta) * self.model.kl_divergence
-
-    #     if is_labelled:
-    #         return torch.mean(L)
-
-    #     logits = self.model.classify(x)
-    #     L = L.view_as(logits.t()).t()
-
-    #     # Calculate entropy H(q(y|x)) and sum over all labels
-    #     H = -torch.sum(torch.mul(logits, torch.log(logits + 1e-8)), dim=-1)
-    #     L = torch.sum(torch.mul(logits, L), dim=-1)
-
-    #     # Equivalent to -U(x)
-    #     U = L + H
-    #     return torch.mean(U)
-
     def forward(self, x, y=None, temp=None, normal=0):
         is_labelled = False if y is None else True
 
@@ -123,7 +86,11 @@ class SVI(nn.Module):
                 if temp is None:
                     print("Error, temperature not given: Exiting")
                     exit()
-                ys = gumbel_softmax(logits, temp)
+                ys = gumbel_multiSample(logits, temp)
+                # ys = gumbel_softmax(logits, temp)
+                # ys_sp = ys.data.cpu().numpy()[0]
+                # import numpy as np
+                # np.savetxt("foo.csv", ys_sp, delimiter=",")
 
         reconstruction = self.model(xs, ys)
 

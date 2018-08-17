@@ -8,3 +8,4 @@ mldata
 *.pt
 *.log
 *.pyc
+*.csv
