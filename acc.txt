@@ -3,4 +3,4 @@ supervised had 91i [17ish 95, 36ish 96 115ish 97], batch size was 100.
 
 Edit 1: Removed importance sampling, changed lr from 3e-4 and beta part removed. No change in acc.
 
-Edit 1: Removed resampling of data and elbo. No evidence of decrease in acc. and doesnt seem it like doing anything. 
+Edit 2: Removed resampling of data and elbo. No evidence of decrease in acc. and doesnt seem it like doing anything. 

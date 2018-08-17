@@ -152,8 +152,11 @@ class VariationalAutoencoder(nn.Module):
             pz = log_gaussian(z, mu, log_var)
 
         kl = qz - pz
-
         return kl
+
+    def kl(self, z_mean, z_log_var):
+        kl_loss = torch.mean(0.5 * torch.sum(torch.exp(z_log_var) + z_mean**2 - 1. - z_log_var, 1))
+        return kl_loss
 
     def add_flow(self, flow):
         self.flow = flow

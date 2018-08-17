@@ -81,9 +81,6 @@ class SVI(nn.Module):
             ys = enumerate_discrete(xs, self.model.y_dim)
             xs = xs.repeat(self.model.y_dim, 1)
 
-        # Increase sampling dimension
-        # xs = self.sampler.resample(xs)
-        # ys = self.sampler.resample(ys)
         reconstruction = self.model(xs, ys)
 
         # p(x|y,z)
@@ -94,7 +91,6 @@ class SVI(nn.Module):
 
         # Equivalent to -L(x, y)
         L = likelihood + prior - next(self.beta) * self.model.kl_divergence
-        # L = self.sampler(elbo)
 
         if is_labelled:
             return torch.mean(L)

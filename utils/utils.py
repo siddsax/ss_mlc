@@ -1,7 +1,6 @@
 import torch
 from torch.autograd import Variable
 
-
 def enumerate_discrete(x, y_dim):
     """
     Generates a `torch.Tensor` of size batch_size x n_labels of
