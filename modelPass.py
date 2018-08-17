@@ -17,14 +17,15 @@ def modelTrPass(model, optimizer, elbo, params):
   model.train()
   print("Epoch: {}".format(params.epoch))
   total_loss, labelled_loss, unlabelled_loss, accuracy = (0, 0, 0, 0)
-  
+ 
   for (x, y), (u, _) in zip(cycle(params.labelled), params.unlabelled):
+      params.temp = max(0.3, np.exp(-params.step*1e-4)) 
       x, y, u = Variable(x), Variable(y), Variable(u)
       if params.cuda:
         x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
 
-      L = -elbo(x, y)
-      U = -elbo(u)
+      L = -elbo(x, y=y)
+      U = -elbo(u, temp=params.temp, normal=params.normal)
 
       # Add auxiliary classification loss q(y|x)
       logits = model.classify(x)
@@ -33,7 +34,7 @@ def modelTrPass(model, optimizer, elbo, params):
       J_alpha = - params.alpha * classication_loss
       if params.ss:
         J_alpha += L + U
-      
+
       J_alpha.backward()
       optimizer.step()
       optimizer.zero_grad()
@@ -45,9 +46,11 @@ def modelTrPass(model, optimizer, elbo, params):
       _, pred_idx = torch.max(logits, 1)
       _, lab_idx = torch.max(y, 1)
       accuracy += torch.mean((pred_idx.data == lab_idx.data).float())
+      params.step += 1
 
   m = len(params.unlabelled)
-  print("[TRAIN]:Total Loss {}, Labelled Loss {}, unlabelled loss {}, acc {}".format(total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m))
+  print("[TRAIN]:Total Loss {}, Labelled Loss {}, unlabelled loss {}, acc {}, temperature {}".format(
+      total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m, params.temp))
 
 def modelTePass(model, elbo, params):
   model.eval()
@@ -59,9 +62,8 @@ def modelTePass(model, elbo, params):
       if params.cuda:
           x, y = x.cuda(device=0), y.cuda(device=0)
 
-      L = -elbo(x, y)
-      U = -elbo(x)
-
+      U = -elbo(x, temp=params.temp, normal=params.normal)
+      L = -elbo(x, y=y)
       logits = model.classify(x)
       classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
 

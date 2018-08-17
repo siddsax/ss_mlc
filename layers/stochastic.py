@@ -109,3 +109,28 @@ class GumbelSoftmax(Stochastic):
         # Softmax as a continuous approximation of argmax
         y = F.softmax((logits + gumbel)/tau, dim=1)
         return y
+
+def sample_gumbel(shape, eps=1e-20):
+    U = torch.rand(shape)
+    if torch.cuda.is_available():
+        U = U.cuda()
+    return -Variable(torch.log(-torch.log(U + eps) + eps))
+
+def gumbel_softmax_sample(logits, temperature):
+    # print(type(logits))
+    # print(type(sample_gumbel(logits.size())))
+    y = logits + sample_gumbel(logits.size())
+    return F.softmax(y / temperature, dim=-1)
+
+def gumbel_softmax(logits, temperature):
+    """
+    input: [*, n_class]
+    return: [*, n_class] an one-hot vector
+    """
+    y = gumbel_softmax_sample(torch.log(logits), temperature)
+    shape = y.size()
+    _, ind = y.max(dim=-1)
+    y_hard = torch.zeros_like(y).view(-1, shape[-1])
+    y_hard.scatter_(1, ind.view(-1, 1), 1)
+    y_hard = y_hard.view(*shape)
+    return (y_hard - y).detach() + y#y

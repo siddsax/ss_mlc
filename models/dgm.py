@@ -45,7 +45,7 @@ class DeepGenerativeModel(VariationalAutoencoder):
         self.encoder = Encoder([x_dim + self.y_dim, h_dim, z_dim])
         self.decoder = Decoder([z_dim + self.y_dim, list(reversed(h_dim)), x_dim])
         self.classifier = Classifier([x_dim, h_dim[0], self.y_dim])
-
+        # self.gumbel = GumbelSoftmax(h_dim[0], self.y_dim, 10)
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 init.xavier_normal(m.weight.data)

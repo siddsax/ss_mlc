@@ -20,6 +20,7 @@ np.random.seed(1337)
 
 params = argparse.ArgumentParser(description='Process some integers.')
 params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-super, 0 for not doing it')
+params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.alpha = 0.1 * len(params.unlabelled) / len(params.labelled)
     params.epochs = 251
-
+    params.step = 0
     model = DeepGenerativeModel([784, 10, 50, [600, 600]])
     if params.cuda:
         model = model.cuda()
