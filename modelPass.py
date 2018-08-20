@@ -21,7 +21,7 @@ def modelTrPass(model, optimizer, elbo, params):
  
   for (x, y), (u, _) in zip(cycle(params.labelled), params.unlabelled):
       params.temp = max(0.3, np.exp(-params.step*1e-4)) 
-      x, y, u = Variable(x), Variable(y), Variable(u)
+      x, y, u = Variable(x).squeeze(), Variable(y).squeeze(), Variable(u).squeeze()
       if params.cuda:
         x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
 
@@ -57,11 +57,11 @@ def modelTePass(model, elbo, params):
   model.eval()
 
   total_loss, labelled_loss, unlabelled_loss, accuracy = (0, 0, 0, 0)
+  m = len(params.validation)
   ypred = []
   ygt = []
   for x, y in params.validation:
-      x, y = Variable(x), Variable(y)
-
+      x, y = Variable(x).squeeze(), Variable(y).squeeze()
       if params.cuda:
           x, y = x.cuda(device=0), y.cuda(device=0)
 
@@ -75,13 +75,12 @@ def modelTePass(model, elbo, params):
       total_loss += J_alpha.data[0]
       labelled_loss += L.data[0]
       unlabelled_loss += U.data[0]
-      ypred.append(logits.data.cpu().numpy().squeeze())
-      ygt.append(y.data.cpu().numpy().squeeze())
       _, pred_idx = torch.max(logits, 1)
       _, lab_idx = torch.max(y, 1)
       accuracy += torch.mean((pred_idx.data == lab_idx.data).float())
+      ypred.append(logits.data.cpu().numpy().squeeze())
+      ygt.append(y.data.cpu().numpy().squeeze())
 
-  m = len(params.validation)
   if accuracy / m > params.best:
     params.best = accuracy / m
   P = 100*precision_k(np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0),5)
