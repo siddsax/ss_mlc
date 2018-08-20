@@ -14,9 +14,9 @@ def precision_k(true_mat, score_mat,k):
         num = np.sum(mat,axis=1)
         p[k] = np.mean(num/(k+1))
 
-    out = ""
-    for i in range(len(p)):
-        out += str(i) + ":" + str(p[i]) + " " 
-    print(out)
+    # out = ""
+    # for i in range(len(p)):
+    #     out += str(i) + ":" + str(p[i]) + " " 
+    # print(out)
     return p
 

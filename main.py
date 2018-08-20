@@ -31,7 +31,7 @@ print("CUDA: {}".format(params.cuda))
 
 if __name__ == "__main__":
     viz = Visualizer(params)
-    params.best = 0.0
+    params.best = 1e10
     params.n_labels = 10
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params = get_dataset(params)
@@ -46,8 +46,20 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(
         model.parameters(), lr=3e-4, betas=(0.9, 0.999))
 
+    # for epoch in range(params.epochs):
+    #     params.epoch = epoch
+    #     modelTrPass(model, optimizer, elbo, params)
+    #     if epoch % 1 == 0:
+    #         modelTePass(model, elbo, params)
     for epoch in range(params.epochs):
         params.epoch = epoch
-        modelTrPass(model, optimizer, elbo, params)
+        losses, losses_names = modelTrPass(model, optimizer, elbo, params)
         if epoch % 1 == 0:
-            modelTePass(model, elbo, params)
+            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer)
+            losses += lossesT
+            losses_names += losses_namesT
+
+        lossDict = {}
+        for key, val in zip(losses_names, losses):
+            lossDict[key] = val
+        viz.plot_current_losses(epoch, lossDict)

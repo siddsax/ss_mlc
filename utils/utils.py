@@ -1,4 +1,5 @@
 import torch
+import os
 from torch.autograd import Variable
 
 def enumerate_discrete(x, y_dim):
@@ -52,3 +53,31 @@ def log_sum_exp(tensor, dim=-1, sum_op=torch.sum):
     """
     max, _ = torch.max(tensor, dim=dim, keepdim=True)
     return torch.log(sum_op(torch.exp(tensor - max), dim=dim, keepdim=True) + 1e-8) + max
+
+
+def load_model(model, name, optimizer=None):
+    if(torch.cuda.is_available()):
+        checkpoint = torch.load(name)
+    else:
+        checkpoint = torch.load(
+            name, map_location=lambda storage, loc: storage)
+
+    model.load_state_dict(checkpoint['state_dict'])
+
+    if optimizer is not None:
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        init = checkpoint['epoch']
+        return model, optimizer, init
+    else:
+        return model
+
+
+def save_model(model, optimizer, epoch, params, name):
+    if not os.path.exists('saved_models/'):
+        os.makedirs('saved_models/')
+    checkpoint = {
+        'state_dict': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'epoch': epoch
+    }
+    torch.save(checkpoint, "saved_models/" + name)
