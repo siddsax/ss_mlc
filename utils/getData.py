@@ -49,7 +49,8 @@ class Dataset(data.Dataset):
             self.scaler = pp.fit(x_for_pp)
         else:
             self.scaler = scaler
-        self.x = self.scaler.transform(np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy')).astype('float32')
+        # self.x = self.scaler.transform(np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy')).astype('float32')
+        self.x = np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
         self.y = np.load('datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
 
     def __len__(self):
@@ -79,10 +80,16 @@ def get_dataset(params):
         params.n_labels = 10
         params.xdim = 784
     else:
+        args = {'batch_size': 100,
+            'shuffle': True,
+            'num_workers': 2}
         params.labelled = Dataset(params, "subs")
-        scaler = params.labelled.getScaler()
-        params.unlabelled, params.validation = Dataset(params, "tr", scaler), Dataset(params, "te", scaler)
         params.n_labels = params.labelled.getClasses()
         params.xdim = params.labelled.getDims()
+        scaler = params.labelled.getScaler()
+        
+        params.labelled = data.DataLoader(params.labelled, **args)
+        params.unlabelled = data.DataLoader(Dataset(params, "tr", scaler), **args)
+        params.validation = data.DataLoader(Dataset(params, "te", scaler), **args)
     return params
 

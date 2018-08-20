@@ -10,3 +10,5 @@ mldata
 *.pyc
 *.csv
 datasets
+*.lprof
+saved_models/
