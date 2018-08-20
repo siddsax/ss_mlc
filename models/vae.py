@@ -48,23 +48,20 @@ class Encoder(nn.Module):
         super(Encoder, self).__init__()
 
         [x_dim, h_dim, z_dim] = dims
-        #print(dims)
-	#print(x_dim)
-	#print(h_dim)
-	#print("="*100)
-	neurons = [x_dim] + h_dim
-	#print(neurons)
-	#exit()
+        neurons = [x_dim] + h_dim
+        self.bn_cat = nn.BatchNorm1d(x_dim)
+        self.drp_5 = nn.Dropout(.5)
         linear_layers = [nn.Linear(neurons[i-1], neurons[i]) for i in range(1, len(neurons))]
 
         self.hidden = nn.ModuleList(linear_layers)
         self.sample = sample_layer(h_dim[-1], z_dim)
 
     def forward(self, x):
+        x = self.bn_cat(x)
+        # x = self.drp_5(x)
         for layer in self.hidden:
-            x = F.relu(layer(x))
+            x = F.relu(self.drp_5(layer(x)))
         return self.sample(x)
-
 
 class Decoder(nn.Module):
     def __init__(self, dims):
