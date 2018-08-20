@@ -114,5 +114,5 @@ class SVI(nn.Module):
         H = -torch.sum(torch.mul(logits, torch.log(logits + 1e-8)), dim=-1)
 
         # Equivalent to -U(x)
-        U = L + H
+        U = L# + H
         return torch.mean(U)

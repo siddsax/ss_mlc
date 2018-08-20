@@ -68,10 +68,13 @@ class Classifier(torch.nn.Module):
         # ---------------------------------------------------------------
         weights_init(self.l0.weight)
         weights_init(self.l1.weight)
+        self.drp_5 = nn.Dropout(.8)
 
     def forward(self, inputs):
 
-        o = F.relu(self.l0(inputs))
+        o = self.drp_5(inputs)
+        o = F.relu(self.l0(o))
+        # o = self.drp_5(o)
         o = F.sigmoid(self.l1(o))#, dim=-1)
         return o
 

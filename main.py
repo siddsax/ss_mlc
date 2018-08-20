@@ -14,6 +14,7 @@ from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
 from modelPass import modelTrPass, modelTePass
 import argparse
+from visualizer import Visualizer
 torch.manual_seed(1337)
 np.random.seed(1337)
 
@@ -24,16 +25,18 @@ params.add_argument('--oss', dest='oss', type=int, default=0, help='1 to ONLY do
 params.add_argument('--ld', dest='ld', type=int, default=0, help='1 to load model')
 params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mnist; delicious;')
+params.add_argument('--mn', dest='name', type=str, default="", help='mnist; delicious;')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
 
 if __name__ == "__main__":
+    viz = Visualizer(params)
     params.best = 1e10
     params.n_labels = 10
     params = get_dataset(params)
-    params.alpha = 0.01 * len(params.unlabelled) / len(params.labelled)
+    params.alpha = 0.1 * len(params.unlabelled) / len(params.labelled)
     print(params.alpha)
     params.epochs = 251
     params.step = 0
@@ -50,6 +53,13 @@ if __name__ == "__main__":
 
     for epoch in range(params.epochs):
         params.epoch = epoch
-        modelTrPass(model, optimizer, elbo, params)
+        losses, losses_names = modelTrPass(model, optimizer, elbo, params)
         if epoch % 1 == 0:
-            modelTePass(model, elbo, params, optimizer)
+            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer)
+            losses += lossesT
+            losses_names += losses_namesT
+
+        lossDict = {}
+        for key, val in zip(losses_names, losses):
+            lossDict[key] = val
+        viz.plot_current_losses(epoch, lossDict)

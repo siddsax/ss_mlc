@@ -60,7 +60,7 @@ def modelTrPass(model, optimizer, elbo, params):
             toPrint += "{} ".format(P[i])
         print(toPrint)
         # modelTePass(model, elbo, params)
-
+  return [P[0], mseLoss], ['Prec_1', 'BCELoss']
 #   P = P/m
 #   print("="*100)
 #   toPrint = "[TRAIN]:Total Loss {}, Labelled Loss {}, unlabelled loss {}, mseLoss {}, temperature {}".format(
@@ -110,3 +110,4 @@ def modelTePass(model, elbo, params, optimizer):
       toPrint += "{} ".format(P[i])
   print(toPrint)
   print("="*100)
+  return [P[0], mseLoss], ['Prec_1_Test', 'BCELossTest']
