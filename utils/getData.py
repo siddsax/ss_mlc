@@ -80,6 +80,8 @@ def get_dataset(params):
         params.n_labels = 10
         params.xdim = 784
     else:
+        print("Loading dataset " + params.data_set)
+        print("="*50)
         args = {'batch_size': 100,
             'shuffle': True,
             'num_workers': 2}

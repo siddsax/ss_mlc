@@ -26,6 +26,7 @@ class Classifier(nn.Module):
     def forward(self, x):
         x = F.relu(self.dense(x))
         x = F.softmax(self.logits(x), dim=-1)
+        # x = F.sigmoid(self.logits(x))#, dim=-1)
         return x
 
 # class Classifier(torch.nn.Module):
