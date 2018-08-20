@@ -2,13 +2,13 @@ import numpy as np
 import os
 import time
 from scipy.misc import imresize
-
+import visdom
 
 class Visualizer():
     def __init__(self, opt):
         self.name = opt.name
         self.opt = opt
-
+        self.vis = visdom.Visdom(server="http://localhost", port=8097)
         self.log_name = os.path.join("saved_models", opt.name, 'loss_log.txt')
         with open(self.log_name, "a") as log_file:
             now = time.strftime("%c")
@@ -34,7 +34,7 @@ class Visualizer():
                     'legend': self.plot_data['legend'],
                     'xlabel': 'epoch',
                     'ylabel': 'loss'},
-                win=self.display_id)
+                win=1)
         except:
             print('\n\nCould not connect to Visdom server (https://github.com/facebookresearch/visdom) for displaying training progress.\nYou can suppress connection to Visdom using the option --display_id -1. To install visdom, run \n$ pip install visdom\n, and start the server by \n$ python -m visdom.server.\n\n')
 

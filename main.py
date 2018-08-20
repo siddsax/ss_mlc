@@ -49,7 +49,7 @@ if __name__ == "__main__":
         model = model.cuda()
     # , sampler=sampler) #,beta=beta)
     elbo = SVI(model, likelihood=binary_cross_entropy)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)#, betas=(0.9, 0.999))
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, betas=(0.9, 0.999))
 
     for epoch in range(params.epochs):
         params.epoch = epoch

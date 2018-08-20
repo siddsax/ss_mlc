@@ -50,8 +50,7 @@ def modelTrPass(model, optimizer, elbo, params):
 
       mseLoss = classication_loss.data.cpu().numpy()#torch.mean((torch.abs(logits.data - y.data)).float())*y.shape[-1]
       params.step += 1
-      P = precision_k(y.data.cpu().numpy().squeeze(),
-                      logits.data.cpu().numpy().squeeze(), 5)
+      P = 100*precision_k(y.data.cpu().numpy().squeeze(),logits.data.cpu().numpy().squeeze(), 5)
       if(iterator % int(max(m/12, 5))==0):
         toPrint = "[TRAIN]:Total Loss {:.2f}, Labelled Loss {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, temperature {}".format(
             float(total_loss), float(labelled_loss), float(unlabelled_loss), float(mseLoss), params.temp)
@@ -77,6 +76,8 @@ def modelTePass(model, elbo, params, optimizer):
   m = len(params.validation)
   ypred = []
   ygt = []
+  Lgt = 0.0
+  Lpred = 0.0
   for x, y in params.validation:
       x, y = Variable(x).squeeze(), Variable(y).squeeze()
       if params.cuda:
@@ -99,7 +100,10 @@ def modelTePass(model, elbo, params, optimizer):
       ypred.append(logits.data.cpu().numpy().squeeze())
       ygt.append(y.data.cpu().numpy().squeeze())
 
-  P = precision_k(np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0),5)
+      Lpred += -elbo(x, y=y).data.cpu().numpy()
+      Lgt += L.data.cpu().numpy()
+
+  P = 100*precision_k(np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0),5)
   if mseLoss / m < params.best:
     params.best = mseLoss / m
     save_model(model, optimizer, params.epoch, params, "/model_best_test")
@@ -110,4 +114,4 @@ def modelTePass(model, elbo, params, optimizer):
       toPrint += "{} ".format(P[i])
   print(toPrint)
   print("="*100)
-  return [P[0], mseLoss], ['Prec_1_Test', 'BCELossTest']
+  return [P[0], mseLoss / m, Lpred / m, Lgt/m], ['Prec_1_Test', 'BCELossTest', 'lblLossPred', 'lblLossGT']

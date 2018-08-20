@@ -75,7 +75,8 @@ class Classifier(torch.nn.Module):
         o = self.drp_5(inputs)
         o = F.relu(self.l0(o))
         # o = self.drp_5(o)
-        o = F.sigmoid(self.l1(o))#, dim=-1)
+        o = F.softmax(self.l1(o), dim=-1)
+        # o = F.sigmoid(self.l1(o))#, dim=-1)
         return o
 
 
