@@ -12,6 +12,7 @@ from models import DeepGenerativeModel
 from itertools import repeat, cycle
 from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
+from precision_k import precision_k
 
 def modelTrPass(model, optimizer, elbo, params):
   model.train()
@@ -56,6 +57,8 @@ def modelTePass(model, elbo, params):
   model.eval()
 
   total_loss, labelled_loss, unlabelled_loss, accuracy = (0, 0, 0, 0)
+  ypred = []
+  ygt = []
   for x, y in params.validation:
       x, y = Variable(x), Variable(y)
 
@@ -72,7 +75,8 @@ def modelTePass(model, elbo, params):
       total_loss += J_alpha.data[0]
       labelled_loss += L.data[0]
       unlabelled_loss += U.data[0]
-
+      ypred.append(logits.data.cpu().numpy().squeeze())
+      ygt.append(y.data.cpu().numpy().squeeze())
       _, pred_idx = torch.max(logits, 1)
       _, lab_idx = torch.max(y, 1)
       accuracy += torch.mean((pred_idx.data == lab_idx.data).float())
@@ -80,5 +84,7 @@ def modelTePass(model, elbo, params):
   m = len(params.validation)
   if accuracy / m > params.best:
     params.best = accuracy / m
+  P = 100*precision_k(np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0),5)
   print("[TEST]:Total Loss {}, Labelled Loss {}, unlabelled loss {}, acc {}, best acc. {}".format(
       total_loss / m, labelled_loss / m, unlabelled_loss / m, accuracy / m, params.best))
+from precision_k import precision_k
