@@ -12,43 +12,43 @@ def weights_init(m):
     	torch.nn.init.xavier_uniform_(m)
     else:
 	torch.nn.init.xavier_uniform(m)
-# class Classifier(nn.Module):
-#     def __init__(self, dims):
-#         """
-#         Single hidden layer classifier
-#         with softmax output.
-#         """
-#         super(Classifier, self).__init__()
-#         [x_dim, h_dim, y_dim] = dims
-#         self.dense = nn.Linear(x_dim, h_dim)
-#         self.logits = nn.Linear(h_dim, y_dim)
-
-#     def forward(self, x):
-#         x = F.relu(self.dense(x))
-#         x = F.softmax(self.logits(x), dim=-1)
-#         return x
-
-class Classifier(torch.nn.Module):
-    
+class Classifier(nn.Module):
     def __init__(self, dims):
+        """
+        Single hidden layer classifier
+        with softmax output.
+        """
         super(Classifier, self).__init__()
-
         [x_dim, h_dim, y_dim] = dims
-        self.l0 = nn.Linear(x_dim, h_dim, bias=True)
-        self.l1 = nn.Linear(h_dim, y_dim, bias=True)
-        # ---------------------------------------------------------------
-        weights_init(self.l0.weight)
-        weights_init(self.l1.weight)
-        self.drp_5 = nn.Dropout(.8)
+        self.dense = nn.Linear(x_dim, h_dim)
+        self.logits = nn.Linear(h_dim, y_dim)
 
-    def forward(self, inputs):
+    def forward(self, x):
+        x = F.relu(self.dense(x))
+        x = F.softmax(self.logits(x), dim=-1)
+        return x
 
-        o = self.drp_5(inputs)
-        o = F.relu(self.l0(o))
-        # o = self.drp_5(o)
-        o = F.softmax(self.l1(o), dim=-1)
-        # o = F.sigmoid(self.l1(o))#, dim=-1)
-        return o
+# class Classifier(torch.nn.Module):
+    
+#     def __init__(self, dims):
+#         super(Classifier, self).__init__()
+
+#         [x_dim, h_dim, y_dim] = dims
+#         self.l0 = nn.Linear(x_dim, h_dim, bias=True)
+#         self.l1 = nn.Linear(h_dim, y_dim, bias=True)
+#         # ---------------------------------------------------------------
+#         weights_init(self.l0.weight)
+#         weights_init(self.l1.weight)
+#         self.drp_5 = nn.Dropout(.8)
+
+#     def forward(self, inputs):
+
+#         o = self.drp_5(inputs)
+#         o = F.relu(self.l0(o))
+#         # o = self.drp_5(o)
+#         o = F.softmax(self.l1(o), dim=-1)
+#         # o = F.sigmoid(self.l1(o))#, dim=-1)
+#         return o
 
 
 class DeepGenerativeModel(VariationalAutoencoder):
