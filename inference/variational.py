@@ -3,7 +3,7 @@ from itertools import repeat
 import torch
 from torch import nn
 import torch.nn.functional as F
-
+import numpy as np
 from utils import log_sum_exp, enumerate_discrete
 from .distributions import log_standard_categorical
 from layers import *
@@ -106,7 +106,7 @@ class SVI(nn.Module):
         L = likelihood + prior - next(self.beta) * self.model.kl_divergence
 
         if is_labelled:
-            return torch.mean(L)
+            return - torch.mean(L), np.mean(reconstruction.data.cpu().numpy()) , np.mean(self.model.kl_divergence.data.cpu().numpy())
 
         if normal:
             L = L.view_as(logits.t()).t()
@@ -118,4 +118,4 @@ class SVI(nn.Module):
 
         # Equivalent to -U(x)
         U = L + H
-        return torch.mean(U)
+        return - torch.mean(U), np.mean(reconstruction.data.cpu().numpy()) , np.mean(self.model.kl_divergence.data.cpu().numpy())

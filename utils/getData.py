@@ -49,9 +49,11 @@ class Dataset(data.Dataset):
             self.scaler = pp.fit(x_for_pp)
         else:
             self.scaler = scaler
-        # self.x = self.scaler.transform(np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy')).astype('float32')
-        self.x = np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
+        pp = MinMaxScaler()
+	self.x = pp.fit_transform(np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy')).astype('float32')
+        #self.x = np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
         self.y = np.load('datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
+
 
     def __len__(self):
         return self.x.shape[0]
