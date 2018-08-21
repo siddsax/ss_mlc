@@ -97,11 +97,13 @@ def modelTePass(model, elbo, params, optimizer):
       Lgt += L.data.cpu().numpy()
 
   P = 100*precision_k(np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0),5)
+  if P[0] > params.bestP:
+    params.bestP = P[0]
   if mseLoss / m < params.best:
     params.best = mseLoss / m
     save_model(model, optimizer, params.epoch, params, "/model_best_test")
-  toPrint = "[TEST]:Total Loss {:.2f}, Labelled Loss {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best mseLoss. {:.2f}".format(
-      float(total_loss / m), float(labelled_loss / m), float(unlabelled_loss / m), float(mseLoss / m), float(params.best))
+  toPrint = "[TEST]:Total Loss {:.2f}, Labelled Loss {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best mseLoss. {:.2f}, best P1 {:.2f}".format(
+      float(total_loss / m), float(labelled_loss / m), float(unlabelled_loss / m), float(mseLoss / m), float(params.best), float(params.bestP))
   toPrint += " || Prec. "
   for i in range(5):
       toPrint += "{} ".format(P[i])
