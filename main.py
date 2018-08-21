@@ -36,8 +36,9 @@ if __name__ == "__main__":
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
     params = get_dataset(params)
-    params.alpha = 0.1 * len(params.unlabelled) / len(params.labelled)
-    params.epochs = 251
+    params.alpha = 0.5 * len(params.unlabelled) / len(params.labelled)
+    print(params.alpha)
+    params.epochs = 2510
     params.step = 0
     model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600]])
     if params.cuda:
