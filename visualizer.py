@@ -13,7 +13,7 @@ class Visualizer():
         with open(self.log_name, "a") as log_file:
             now = time.strftime("%c")
             log_file.write('================ Training Loss (%s) ================\n' % now)
-
+	self.win = int(np.random.randint(1, high=1000))
 
     def throw_visdom_connection_error(self): 
         print('\n\nCould not connect to Visdom server (https://github.com/facebookresearch/visdom) for displaying training progress.\nYou can suppress connection to Visdom using the option --display_id -1. To install visdom, run \n$ pip install visdom\n, and start the server by \n$ python -m visdom.server.\n\n')
@@ -34,7 +34,7 @@ class Visualizer():
                     'legend': self.plot_data['legend'],
                     'xlabel': 'epoch',
                     'ylabel': 'loss'},
-                win=int(np.rand.randint(1, high=1000)))
+                win= self.win)
         except:
             print('\n\nCould not connect to Visdom server (https://github.com/facebookresearch/visdom) for displaying training progress.\nYou can suppress connection to Visdom using the option --display_id -1. To install visdom, run \n$ pip install visdom\n, and start the server by \n$ python -m visdom.server.\n\n')
 
