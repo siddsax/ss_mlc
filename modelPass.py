@@ -46,9 +46,9 @@ def modelTrPass(model, optimizer, elbo, params):
       optimizer.step()
       optimizer.zero_grad()
 
-      total_loss = J_alpha.data[0]
-      labelled_loss = L.data[0]
-      unlabelled_loss = U.data[0]
+      total_loss = J_alpha.data.cpu().numpy()
+      labelled_loss = L.data.cpu().numpy()
+      unlabelled_loss = U.data.cpu().numpy()
 
       _, pred_idx = torch.max(logits, 1)
       _, lab_idx = torch.max(y, 1)
@@ -74,6 +74,8 @@ def modelTePass(model, elbo, params, optimizer):
   ygt = []
   Lgt = 0.0
   Lpred = 0.0
+  kl = 0.0
+  recon = 0.0
   for x, y in params.validation:
     
    
@@ -82,19 +84,22 @@ def modelTePass(model, elbo, params, optimizer):
           x, y = x.cuda(device=0), y.cuda(device=0)
 
       U, _, _ = elbo(x, temp=params.temp, normal=params.normal)
-      L, kl, recon = elbo(x, y=y)
+      L, klA, reconA = elbo(x, y=y)
       logits = model.classify(x)
 
     #   classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
       classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
       J_alpha = L + params.alpha * classication_loss + U
 
+      _, pred_idx = torch.max(logits, 1)
+      _, lab_idx = torch.max(y, 1)
+      
       total_loss += J_alpha.data.cpu().numpy()
       labelled_loss += L.data.cpu().numpy()
       unlabelled_loss += U.data.cpu().numpy()
-      _, pred_idx = torch.max(logits, 1)
-      _, lab_idx = torch.max(y, 1)
       mseLoss += classication_loss.data.cpu().numpy()#torch.mean((pred_idx.data == lab_idx.data).float())
+      kl += klA
+      recon += reconA
       ypred.append(logits.data.cpu().numpy().squeeze())
       ygt.append(y.data.cpu().numpy().squeeze())
 
@@ -109,7 +114,7 @@ def modelTePass(model, elbo, params, optimizer):
     params.best = mseLoss / m
     save_model(model, optimizer, params.epoch, params, "/model_best_test")
   toPrint = "[TEST]:Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}".format(
-        float(total_loss), float(labelled_loss), float(kl), float(recon), float(unlabelled_loss), float(mseLoss), params.bestP)
+        float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP)
   toPrint += " || Prec. " + str(P[0])
 #   for i in range(5):
 #       toPrint += "{} ".format(P[i])

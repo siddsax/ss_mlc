@@ -103,10 +103,17 @@ class SVI(nn.Module):
         prior = -log_standard_categorical(ys)
 
         # Equivalent to -L(x, y)
-        L = likelihood + prior - next(self.beta) * self.model.kl_divergence
+        L = likelihood - next(self.beta) * self.model.kl_divergence + prior
+        # print(- prior)
+        # print(- likelihood)
+        # print(self.model.kl_divergence)
+        # print(L)
+        # print("=")
+        # exit()
+
 
         if is_labelled:
-            return - torch.mean(L), np.mean(reconstruction.data.cpu().numpy()) , np.mean(self.model.kl_divergence.data.cpu().numpy())
+            return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy())
 
         if normal:
             L = L.view_as(logits.t()).t()
@@ -118,4 +125,4 @@ class SVI(nn.Module):
 
         # Equivalent to -U(x)
         U = L + H
-        return - torch.mean(U), np.mean(reconstruction.data.cpu().numpy()) , np.mean(self.model.kl_divergence.data.cpu().numpy())
+        return - torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy())
