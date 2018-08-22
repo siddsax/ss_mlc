@@ -70,3 +70,5 @@ if __name__ == "__main__":
 # | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE
 # | 56.01255894 Temp 1 BCE
 # 54.22291756 | 56.23233914 Temp 1 BCE ST-gumbel-mc 
+# 54.78807092 | 56.45211935 Temp 1 BCE ST-gumbel-mc
+# 56.01255894 | 56.86028004 Temp 1 BCE ST-gumbel-mc Dropout
