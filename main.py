@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
     params = get_dataset(params)
-    params.alpha = 1 * len(params.unlabelled) / len(params.labelled)
+    params.alpha = 4.5#1 * len(params.unlabelled) / len(params.labelled)
     print(params.alpha)
     params.epochs = 2510
     params.step = 0
