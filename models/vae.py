@@ -79,16 +79,17 @@ class Decoder(nn.Module):
         super(Decoder, self).__init__()
 
         [z_dim, h_dim, x_dim] = dims
-	#print("="*100)
         neurons = [z_dim] + h_dim
         linear_layers = [nn.Linear(neurons[i-1], neurons[i]) for i in range(1, len(neurons))]
         self.hidden = nn.ModuleList(linear_layers)
+        # self.bn_cat = nn.BatchNorm1d(z_dim)
 
         self.reconstruction = nn.Linear(h_dim[-1], x_dim)
 
         self.output_activation = nn.Sigmoid()
 
     def forward(self, x):
+        # x = self.bn_cat(x)
         for layer in self.hidden:
             x = F.relu(layer(x))
         return self.output_activation(self.reconstruction(x))

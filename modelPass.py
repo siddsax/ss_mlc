@@ -22,10 +22,9 @@ def modelTrPass(model, optimizer, elbo, params):
   iterator = 0
   m = len(params.unlabelled)
   for (x, y), (u, _) in zip(cycle(params.labelled), params.unlabelled):
-     
-      
+
       iterator += 1.0
-      params.temp = max(0.3, np.exp(-params.step*1e-4))
+      params.temp = 1.0#max(.9, 1.0*np.exp(-params.step*3e-4))
       x, y, u = Variable(x).squeeze(), Variable(y).squeeze(), Variable(u).squeeze()
       if params.cuda:
             x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
@@ -35,8 +34,8 @@ def modelTrPass(model, optimizer, elbo, params):
 
       # Add auxiliary classification loss q(y|x)
       logits = model.classify(x)
-      classication_loss = - torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
-    #   classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
+      # classication_loss = - torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
+      classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
 
       J_alpha = params.alpha * classication_loss
       if params.ss:
@@ -52,7 +51,7 @@ def modelTrPass(model, optimizer, elbo, params):
 
       _, pred_idx = torch.max(logits, 1)
       _, lab_idx = torch.max(y, 1)
-      mseLoss = classication_loss.data.cpu().numpy()#torch.mean((pred_idx.data == lab_idx.data).float())
+      mseLoss = classication_loss.data.cpu().numpy()
       params.step += 1
       P = 100*precision_k(y.data.cpu().numpy().squeeze(),logits.data.cpu().numpy().squeeze(), 5)
       if(iterator % int(max(m/12, 5))==0):
@@ -87,8 +86,8 @@ def modelTePass(model, elbo, params, optimizer):
       L, klA, reconA = elbo(x, y=y)
       logits = model.classify(x)
 
-    #   classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
-      classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
+      # classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
+      classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
       J_alpha = L + params.alpha * classication_loss + U
 
       _, pred_idx = torch.max(logits, 1)

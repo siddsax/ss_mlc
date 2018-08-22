@@ -65,3 +65,8 @@ if __name__ == "__main__":
         for key, val in zip(losses_names, losses):
             lossDict[key] = val
         viz.plot_current_losses(epoch, lossDict)
+
+# 54.81946468 | 55.79
+# | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE
+# | 56.01255894 Temp 1 BCE
+# 54.22291756 | 56.23233914 Temp 1 BCE ST-gumbel-mc 

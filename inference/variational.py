@@ -86,6 +86,7 @@ class SVI(nn.Module):
                 if temp is None:
                     print("Error, temperature not given: Exiting")
                     exit()
+                # ys = logits
                 ys = gumbel_multiSample(logits, temp)
                 # ys = gumbel_softmax(logits, temp)
                 # ys_sp = ys.data.cpu().numpy()[0]
@@ -104,13 +105,6 @@ class SVI(nn.Module):
 
         # Equivalent to -L(x, y)
         L = likelihood - next(self.beta) * self.model.kl_divergence + prior
-        # print(- prior)
-        # print(- likelihood)
-        # print(self.model.kl_divergence)
-        # print(L)
-        # print("=")
-        # exit()
-
 
         if is_labelled:
             return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy())

@@ -133,16 +133,15 @@ def gumbel_softmax(logits, temperature, eps=1e-20):
     y_hard = torch.zeros_like(y).view(-1, shape[-1])
     y_hard.scatter_(1, ind.view(-1, 1), 1)
     y_hard = y_hard.view(*shape)
-    return y #,(y_hard - y).detach() + y#y
+    return (y_hard - y).detach() + y#y
 
 def gumbel_multiSample(logits, temperature, eps=1e-20):
-    sample = []
-    #print(logits.shape)
     logits = logits.view(logits.shape[0], logits.shape[1], 1)
     logits = torch.cat((torch.log(logits + eps), torch.log(1-logits + eps)), dim=-1)
-    sample = gumbel_softmax_sample(logits, temperature)[:,:,0]
-    # for i in range(logits.shape[-1]):
-    #     A = gumbel_softmax_sample(params, (logits[:, i]).contiguous().view((-1, 1)), temperature)
-    #     sample.append(A[:, 0].contiguous().view((-1, 1)))
-    # sample = torch.cat(sample, dim=-1)
-    return sample
+    y = gumbel_softmax_sample(logits, temperature)[:,:,0]
+    shape = y.size()
+    _, ind = y.max(dim=-1)
+    y_hard = torch.zeros_like(y).view(-1, shape[-1])
+    y_hard.scatter_(1, ind.view(-1, 1), 1)
+    y_hard = y_hard.view(*shape)
+    return (y_hard - y).detach() + y#y
