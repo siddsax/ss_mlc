@@ -57,7 +57,7 @@ class Encoder(nn.Module):
         self.sample = sample_layer(h_dim[-1], z_dim)
 
     def forward(self, x):
-        x = self.bn_cat(x)
+        #####x = self.bn_cat(x) ########### HELPS MAYBE REMOVED FOR STACKED
         # x = self.drp_5(x)
         for layer in self.hidden:
             x = F.relu(self.drp_5(layer(x)))

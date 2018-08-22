@@ -86,7 +86,7 @@ def get_dataset(params):
         print("="*50)
         args = {'batch_size': 100,
             'shuffle': True,
-            'num_workers': 2}
+            'num_workers': 1}
         params.labelled = Dataset(params, "subs")
         params.n_labels = params.labelled.getClasses()
         params.xdim = params.labelled.getDims()

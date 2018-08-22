@@ -125,7 +125,7 @@ class StackedDeepGenerativeModel(DeepGenerativeModel):
 
         # Make vae feature model untrainable by freezing parameters
         self.features = features
-        self.features.train(False)
+        #self.features.train(False)
 
         for param in self.features.parameters():
             param.requires_grad = False
