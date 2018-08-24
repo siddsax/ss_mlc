@@ -21,16 +21,15 @@ def modelTrPass(model, optimizer, elbo, params):
   total_loss, labelled_loss, unlabelled_loss, mseLoss = (0, 0, 0, 0)
   iterator = 0
   m = len(params.unlabelled)
-  for (x, y), (u, _) in zip(cycle(params.labelled), params.unlabelled):
-
+  # for (x, y), (u, _) in zip(cycle(params.labelled), params.unlabelled):
+  for (u, _), (x, y) in params.allData:
       iterator += 1.0
       params.temp = 1.0#max(.9, 1.0*np.exp(-params.step*3e-4))
-      x, y, u = Variable(x).squeeze(), Variable(y).squeeze(), Variable(u).squeeze()
+      x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
       if params.cuda:
-            x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
+        x, y = x.cuda(device=0), y.cuda(device=0)
 
       L, kl, recon = elbo(x, y=y)
-      U, _, _ = elbo(u, temp=params.temp, normal=params.normal)
 
       # Add auxiliary classification loss q(y|x)
       logits = model.classify(x)
@@ -39,15 +38,19 @@ def modelTrPass(model, optimizer, elbo, params):
 
       J_alpha = params.alpha * classication_loss
       if params.ss:
-            J_alpha += L + U
-
+        u = Variable(u).squeeze().float()
+        if params.cuda:
+          u = u.cuda(device=0)
+        U, _, _ = elbo(u, temp=params.temp, normal=params.normal)
+        J_alpha += L + U
+        unlabelled_loss = U.data.cpu().numpy()
+      else:
+        unlabelled_loss = 0.0
+      total_loss = J_alpha.data.cpu().numpy()
+      labelled_loss = L.data.cpu().numpy()
       J_alpha.backward()
       optimizer.step()
       optimizer.zero_grad()
-
-      total_loss = J_alpha.data.cpu().numpy()
-      labelled_loss = L.data.cpu().numpy()
-      unlabelled_loss = U.data.cpu().numpy()
 
       _, pred_idx = torch.max(logits, 1)
       _, lab_idx = torch.max(y, 1)
@@ -61,12 +64,11 @@ def modelTrPass(model, optimizer, elbo, params):
         # for i in range(5):
         #     toPrint += "{} ".format(P[i])
         print(toPrint)
-        # modelTePass(model, elbo, params)
+        modelTePass(model, elbo, params, optimizer)
   return [P[0], mseLoss], ['Prec_1', 'BCELoss']
 
 def modelTePass(model, elbo, params, optimizer):
   model.eval()
-
   total_loss, labelled_loss, unlabelled_loss, mseLoss = (0, 0, 0, 0)
   m = len(params.validation)
   ypred = []
@@ -76,8 +78,6 @@ def modelTePass(model, elbo, params, optimizer):
   kl = 0.0
   recon = 0.0
   for x, y in params.validation:
-    
-   
       x, y = Variable(x).squeeze(), Variable(y).squeeze()
       if params.cuda:
           x, y = x.cuda(device=0), y.cuda(device=0)

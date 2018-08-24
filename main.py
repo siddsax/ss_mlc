@@ -48,11 +48,6 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(
         model.parameters(), lr=1e-4, betas=(0.9, 0.999))
 
-    # for epoch in range(params.epochs):
-    #     params.epoch = epoch
-    #     modelTrPass(model, optimizer, elbo, params)
-    #     if epoch % 1 == 0:
-    #         modelTePass(model, elbo, params)
     for epoch in range(params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params)

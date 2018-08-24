@@ -20,10 +20,12 @@ class Classifier(nn.Module):
         """
         super(Classifier, self).__init__()
         [x_dim, h_dim, y_dim] = dims
+        # self.drp_5 = nn.Dropout(.5)
         self.dense = nn.Linear(x_dim, h_dim)
         self.logits = nn.Linear(h_dim, y_dim)
 
     def forward(self, x):
+        # x = self.drp_5(x)
         x = F.relu(self.dense(x))
         x = F.softmax(self.logits(x), dim=-1)
         # x = F.sigmoid(self.logits(x))#, dim=-1)
