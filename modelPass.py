@@ -17,7 +17,7 @@ from precision_k import precision_k
 
 def modelTrPass(model, optimizer, elbo, params):
   model.train()
-  print("Epoch: {}".format(params.epoch))
+  # print("Epoch: {}".format(params.epoch))
   total_loss, labelled_loss, unlabelled_loss, mseLoss = (0, 0, 0, 0)
   iterator = 0
   m = len(params.unlabelled)
@@ -58,16 +58,17 @@ def modelTrPass(model, optimizer, elbo, params):
       params.step += 1
       P = 100*precision_k(y.data.cpu().numpy().squeeze(),logits.data.cpu().numpy().squeeze(), 5)
       if(iterator % int(max(m/12, 5))==0):
-        toPrint = "[TRAIN]:Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, temperature {}".format(
-            float(total_loss), float(labelled_loss), float(kl), float(recon), float(unlabelled_loss), float(mseLoss), params.temp)
+      # if((iterator % 12)==0):
+        toPrint = "[TRAIN]:(Epoch, Iteration):({}, {}/{}); Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, temperature {}".format(
+        float(params.epoch), float(iterator), float(m), float(total_loss), float(labelled_loss), float(kl), float(recon), float(unlabelled_loss), float(mseLoss), params.temp)
         toPrint += " || Prec. " + str(P[0])
-        # for i in range(5):
-        #     toPrint += "{} ".format(P[i])
         print(toPrint)
-        modelTePass(model, elbo, params, optimizer)
+      # if((iterator % int(max(m/4, 5))==0) and iterator>0):
+      # if(((iterator % 120)==0) and iterator>0):
+        # modelTePass(model, elbo, params, optimizer)#, testBatch=np.inf)
   return [P[0], mseLoss], ['Prec_1', 'BCELoss']
 
-def modelTePass(model, elbo, params, optimizer):
+def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   model.eval()
   total_loss, labelled_loss, unlabelled_loss, mseLoss = (0, 0, 0, 0)
   m = len(params.validation)
@@ -77,8 +78,12 @@ def modelTePass(model, elbo, params, optimizer):
   Lpred = 0.0
   kl = 0.0
   recon = 0.0
+  dataPts = 0
   for x, y in params.validation:
-      x, y = Variable(x).squeeze(), Variable(y).squeeze()
+      x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
+      dataPts +=x.shape[0]
+      if dataPts > testBatch:
+        break
       if params.cuda:
           x, y = x.cuda(device=0), y.cuda(device=0)
 
@@ -90,9 +95,6 @@ def modelTePass(model, elbo, params, optimizer):
       classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
       J_alpha = L + params.alpha * classication_loss + U
 
-      _, pred_idx = torch.max(logits, 1)
-      _, lab_idx = torch.max(y, 1)
-      
       total_loss += J_alpha.data.cpu().numpy()
       labelled_loss += L.data.cpu().numpy()
       unlabelled_loss += U.data.cpu().numpy()
@@ -111,7 +113,7 @@ def modelTePass(model, elbo, params, optimizer):
     params.bestP = P[0]
   if mseLoss / m < params.best:
     params.best = mseLoss / m
-    save_model(model, optimizer, params.epoch, params, "/model_best_test")
+    save_model(model, optimizer, params.epoch, params, "/model_best_test_" + str(params.ss))
   toPrint = "[TEST]:Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}".format(
         float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP)
   toPrint += " || Prec. " + str(P[0])

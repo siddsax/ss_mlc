@@ -113,8 +113,8 @@ def get_dataset(params):
         params.labelled = Dataset(params, "subs", 0)
         params.n_labels = params.labelled.getClasses()
         params.xdim = params.labelled.getDims()
-        params.labelled = data.DataLoader(params.labelled, **args)
         scaler = params.labelled.getScaler()
+        params.labelled = data.DataLoader(params.labelled, **args)
         params.unlabelled = data.DataLoader(Dataset(params, "tr", 0, scaler), **args)
         params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
         params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 0), Dataset(params, "subs", 0)), **args)
@@ -122,9 +122,9 @@ def get_dataset(params):
     elif params.data_set=="amzn":
         print("Loading dataset " + params.data_set)
         print("="*50)
-        args = {'batch_size': 10,
+        args = {'batch_size': 100,
             'shuffle': True,
-            'num_workers': 0}
+            'num_workers': 0 }
         params.labelled = Dataset(params, "subs", 1)
         params.n_labels = params.labelled.getClasses()
         params.xdim = params.labelled.getDims()

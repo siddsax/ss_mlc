@@ -24,6 +24,7 @@ params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-s
 params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mnist; delicious;')
 params.add_argument('--mn', dest='name', type=str, default="", help='mnist; delicious;')
+params.add_argument('--lm', dest='lm', type=int, default=0, help='mnist; delicious;')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
@@ -47,12 +48,15 @@ if __name__ == "__main__":
     elbo = SVI(model, likelihood=binary_cross_entropy)
     optimizer = torch.optim.Adam(
         model.parameters(), lr=1e-4, betas=(0.9, 0.999))
-
-    for epoch in range(params.epochs):
+    init = 0
+    if(params.lm):
+	print("================= Loading Model ============================")
+	model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + str(params.ss), optimizer)
+    for epoch in range(init, params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params)
         if epoch % 1 == 0:
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer)
+            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, testBatch=np.inf)
             losses += lossesT
             losses_names += losses_namesT
 
@@ -65,5 +69,5 @@ if __name__ == "__main__":
 # | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE
 # | 56.01255894 Temp 1 BCE
 # 54.22291756 | 56.23233914 Temp 1 BCE ST-gumbel-mc 
-# 54.78807092 | 56.45211935 Temp 1 BCE ST-gumbel-mc
+# 54.78807092 | 56.51491284 Temp 1 BCE ST-gumbel-mc
 # 56.01255894 | 56.86028004 Temp 1 BCE ST-gumbel-mc Dropout
