@@ -25,7 +25,8 @@ params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do 
 params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mnist; delicious;')
 params.add_argument('--mn', dest='name', type=str, default="", help='mnist; delicious;')
 params.add_argument('--lm', dest='lm', type=int, default=0, help='mnist; delicious;')
-
+params.add_argument('--a', dest='alpha', type=float, default=4.5, help='mnist; delicious;')
+params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
     params = get_dataset(params)
-    params.alpha = 4.5#1 * len(params.unlabelled) / len(params.labelled)
+    params.alpha = params.alpha#1 * len(params.unlabelled) / len(params.labelled)
     print(params.alpha)
     params.epochs = 2510
     params.step = 0
@@ -49,12 +50,15 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(
         model.parameters(), lr=1e-4, betas=(0.9, 0.999))
     init = 0
+
     if(params.lm):
-	print("================= Loading Model ============================")
-	model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + str(params.ss), optimizer)
+        print("================= Loading Model ============================")
+        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + str(params.ss), optimizer)
+        #model, optimizer, init = load_model(model, 'saved_models/model_best_test_0', optimizer)
+
     for epoch in range(init, params.epochs):
         params.epoch = epoch
-        losses, losses_names = modelTrPass(model, optimizer, elbo, params)
+        losses, losses_names = modelTrPass(model, optimizer, elbo, params, viz=viz)
         if epoch % 1 == 0:
             lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, testBatch=np.inf)
             losses += lossesT

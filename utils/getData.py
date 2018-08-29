@@ -104,10 +104,10 @@ def get_dataset(params):
         params.labelled, params.unlabelled, params.validation =  get_mnist(params)
         params.n_labels = 10
         params.xdim = 784
-    elif params.data_set=="delicious":
+    elif params.data_set=="delicious" or "bibtex":
         print("Loading dataset " + params.data_set)
         print("="*50)
-        args = {'batch_size': 100,
+        args = {'batch_size': params.mb,
             'shuffle': True,
             'num_workers': 2}
         params.labelled = Dataset(params, "subs", 0)
@@ -122,7 +122,7 @@ def get_dataset(params):
     elif params.data_set=="amzn":
         print("Loading dataset " + params.data_set)
         print("="*50)
-        args = {'batch_size': 100,
+        args = {'batch_size': params.mb,
             'shuffle': True,
             'num_workers': 0 }
         params.labelled = Dataset(params, "subs", 1)

@@ -105,7 +105,6 @@ class SVI(nn.Module):
 
         # Equivalent to -L(x, y)
         L = likelihood - next(self.beta) * self.model.kl_divergence + prior
-
         if is_labelled:
             return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy())
 
@@ -115,7 +114,7 @@ class SVI(nn.Module):
 
         # Calculate entropy H(q(y|x)) and sum over all labels
         # H = -torch.sum(torch.mul(logits, torch.log(logits + 1e-8)), dim=-1)
-        H = -torch.sum(torch.mul(logits, torch.log(logits + 1e-8)) + torch.mul(1 - logits, torch.log(1 - logits + 1e-8)), dim=-1)
+        H = - (torch.sum(torch.mul(logits, torch.log(logits + 1e-8)) + torch.mul(1 - logits, torch.log(1 - logits + 1e-8)), dim=-1))
 
         # Equivalent to -U(x)
         U = L + H
