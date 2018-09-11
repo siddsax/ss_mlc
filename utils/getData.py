@@ -59,7 +59,8 @@ class Dataset(data.Dataset):
             self.x = pp.fit_transform(np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy')).astype('float32')
             #self.x = np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
             self.y = np.load('datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
-
+	print(self.x.shape)
+	print(self.y.shape)
         print("=== INIT ==== " + dtype)
     def __len__(self):
         return self.x.shape[0]
@@ -104,22 +105,8 @@ def get_dataset(params):
         params.labelled, params.unlabelled, params.validation =  get_mnist(params)
         params.n_labels = 10
         params.xdim = 784
-    elif params.data_set=="delicious" or "bibtex":
-        print("Loading dataset " + params.data_set)
-        print("="*50)
-        args = {'batch_size': params.mb,
-            'shuffle': True,
-            'num_workers': 2}
-        params.labelled = Dataset(params, "subs", 0)
-        params.n_labels = params.labelled.getClasses()
-        params.xdim = params.labelled.getDims()
-        scaler = params.labelled.getScaler()
-        params.labelled = data.DataLoader(params.labelled, **args)
-        params.unlabelled = data.DataLoader(Dataset(params, "tr", 0, scaler), **args)
-        params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
-        params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 0), Dataset(params, "subs", 0)), **args)
-
     elif params.data_set=="amzn":
+	print("TYPE 2")
         print("Loading dataset " + params.data_set)
         print("="*50)
         args = {'batch_size': params.mb,
@@ -132,5 +119,22 @@ def get_dataset(params):
         params.unlabelled = data.DataLoader(Dataset(params, "tr", 1), **args)
         params.validation = data.DataLoader(Dataset(params, "te", 1), **args)
         params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 1), Dataset(params, "subs", 1)), **args)
+
+    else:# params.data_set=="delicious" or params.data_set == "bibtex":
+        print("TYPE 3")
+	print("Loading dataset " + params.data_set)
+	print("="*50)
+        args = {'batch_size': params.mb,
+            'shuffle': True,
+            'num_workers': 2}
+        params.labelled = Dataset(params, "subs", 0)
+        params.n_labels = params.labelled.getClasses()
+        params.xdim = params.labelled.getDims()
+        scaler = params.labelled.getScaler()
+        params.labelled = data.DataLoader(params.labelled, **args)
+        params.unlabelled = data.DataLoader(Dataset(params, "tr", 0, scaler), **args)
+        params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
+        params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 0), Dataset(params, "subs", 0)), **args)
+
     return params
 

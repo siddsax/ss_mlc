@@ -22,8 +22,12 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
   iterator = 0
   m = len(params.unlabelled)
   # m = len(params.labelled)
-  for (u, _), (x, y) in params.allData:
-  # for (x,y) in params.unlabelled:
+  #for (u, _), (x, y) in params.allData:
+  #print(len(params.labelled))
+  #print(len(params.unlabelled))
+  #print(len(params.allData))
+  #exit()
+  for (x,y) in params.unlabelled:
       iterator += 1.0
       params.temp = max(.5, 1.0*np.exp(-params.step*3e-4))
       x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
