@@ -55,7 +55,7 @@ class SVI(nn.Module):
     Stochastic variational inference (SVI).
     """
     base_sampler = ImportanceWeightedSampler(mc=1, iw=1)
-    def __init__(self, model, likelihood=F.binary_cross_entropy, beta=repeat(1), sampler=base_sampler):
+    def __init__(self, model, params, likelihood=F.binary_cross_entropy, beta=repeat(1), sampler=base_sampler):
         """
         Initialises a new SVI optimizer for semi-
         supervised learning.
@@ -69,6 +69,7 @@ class SVI(nn.Module):
         self.likelihood = likelihood
         self.sampler = sampler
         self.beta = beta
+        self.params = params
 
     def forward(self, x, y=None, temp=None, normal=0):
         is_labelled = False if y is None else True
@@ -85,23 +86,20 @@ class SVI(nn.Module):
             else:
                 if temp is None:
                     print("Error, temperature not given: Exiting")
-                    exit() 
+                    exit()
                 ys = gumbel_multiSample(logits, temp)
-                one = ys[0].data.cpu().numpy()		
-		import pdb
-		pdb.set_trace()
-		np.savetxt('one.csv', one, delimiter = ',')
-		# ys = gumbel_softmax(logits, temp)
-                # ys_sp = ys.data.cpu().numpy()[0]
-                # import numpy as np
-                # np.savetxt("foo.csv", ys_sp, delimiter=",")
+                one = ys[0].data.cpu().numpy()
+                np.savetxt('one.csv', one, delimiter = ',')
+                # import pdb
+                # pdb.set_trace()
+                # ys = gumbel_softmax(logits, temp)
 
         reconstruction = self.model(xs, ys)
 
         # p(x|y,z)
         # likelihood = -self.likelihood(reconstruction, xs)
         diff = reconstruction - xs
-        likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
+        likelihood = - self.params.reconFact * torch.sum(torch.mul(diff, diff), dim=-1)
 
         # p(y)
         prior = -log_standard_categorical(ys)

@@ -35,6 +35,7 @@ if __name__ == "__main__":
     viz = Visualizer(params)
     params.best = 1e10
     params.temp = 1.0
+    params.reconFact = 1.0
     params.n_labels = 10
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     if params.cuda:
         model = model.cuda()
     # , sampler=sampler) #,beta=beta)
-    elbo = SVI(model, likelihood=binary_cross_entropy)
+    elbo = SVI(model, params, likelihood=binary_cross_entropy)
     optimizer = torch.optim.Adam(
         model.parameters(), lr=1e-4, betas=(0.9, 0.999))
     init = 0

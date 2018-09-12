@@ -22,15 +22,20 @@ class Classifier(nn.Module):
         [x_dim, h_dim, y_dim] = dims
         # self.drp_5 = nn.Dropout(.5)
         self.dense = nn.Linear(x_dim, h_dim)
-        self.logits = nn.Linear(h_dim, y_dim)
+        self.logitsP = nn.Linear(h_dim, y_dim)
+        self.logitsN = nn.Linear(h_dim, y_dim)
 
     def forward(self, x):
         # x = self.drp_5(x)
         x = F.relu(self.dense(x))
         #x = F.softmax(self.logits(x), dim=-1)
-        preds = F.sigmoid(self.logits(x))#, dim=-1)
-        logits = F.relu(self.logits(x))
-	return logits, preds
+        predsP = self.logitsP(x)
+        predsN = self.logitsN(x)
+        predsP = predsP.view(predsP.shape[0], predsP.shape[1], 1)
+        predsN = predsN.view(predsN.shape[0], predsN.shape[1], 1)
+        logits = torch.cat((predsP, predsN), dim=-1)
+        preds = F.softmax(logits, dim=-1)[:,:,0]
+        return logits, preds
 
 # class Classifier(torch.nn.Module):
     

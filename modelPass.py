@@ -23,7 +23,10 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
   for (u, _), (x, y) in params.allData:
   #for (x,y) in params.unlabelled:
       iterator += 1.0
-      params.temp = max(.5, 1.0*np.exp(-params.step*1e-4)) #default
+      params.temp = max(.5, 1.0*np.exp(-params.step*3e-4)) #default
+      params.reconFact = torch.autograd.Variable(torch.from_numpy(np.array(np.exp(-params.step*3e-4))))
+      if torch.cuda.is_available():
+        params.reconFact = params.reconFact.cuda().float()
       # params.temp = .5 + .5* np.exp(-params.step*2.7e-4)
 
       x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
@@ -31,11 +34,10 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
         x, y = x.cuda(device=0), y.cuda(device=0)
 
       # Add auxiliary classification loss q(y|x)
-      logits, preds = model.classify(x)
-
+      _, preds = model.classify(x)
       # classication_loss = - torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
       classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
-      
+
 
       if params.ss:
         L, kl, recon, prior = elbo(x, y=y)
@@ -48,7 +50,7 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
         kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         recon = 0.0
         J_alpha = classication_loss
-      
+
       total_loss = J_alpha.data.cpu().numpy()
       J_alpha.backward()
       optimizer.step()
@@ -120,7 +122,7 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
       ypred.append(preds.data.cpu().numpy().squeeze())
       ygt.append(y.data.cpu().numpy().squeeze())
 
-      lp, _, _, _= elbo(x, y=gumbel_multiSample(preds, params.temp))
+      lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temp))
       Lpred += lp.data.cpu().numpy()
       Lgt += L.data.cpu().numpy()
 
@@ -130,8 +132,8 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   if mseLoss / m < params.best:
     params.best = mseLoss / m
     save_model(model, optimizer, params.epoch, params, "/model_best_test_lr3_" + str(params.ss))
-  toPrint = "[TEST]:Temp {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}".format(
-        float(params.temp), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP)
+  toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}".format(
+        float(params.temp), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP)
   toPrint += " || Prec. " + str(P[0]) + " " + str(P[-1])
 #   for i in range(5):
 #       toPrint += "{} ".format(P[i])

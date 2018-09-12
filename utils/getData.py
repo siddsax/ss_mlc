@@ -10,8 +10,21 @@ from torchvision.datasets import MNIST
 import torchvision.transforms as transforms
 from utils import *
 from scipy import sparse
-def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
+class CombineDataset(data.Dataset):
+    def __init__(self, dataLrg, dataSml): 
+        self.data1 = dataLrg#call first instance
+        self.data2 = dataSml#call second instance
+        self.size1 = len(dataLrg)
+        self.size2 = len(dataSml)
 
+    def __len__(self):
+        return self.size1
+
+    def __getitem__(self,index):
+        return self.data1[index], self.data2[index%self.size2]
+
+def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
+    
 
     flatten_bernoulli = lambda x: transforms.ToTensor()(x).view(-1).bernoulli()
     mnist_train = MNIST(location, train=True, download=True,
@@ -87,22 +100,10 @@ class Dataset(data.Dataset):
         y = torch.from_numpy(y.reshape((1, y.shape[-1])))#self.labels[ID]
         return X, y
 
-class CombineDataset(data.Dataset):
-    def __init__(self, dataLrg, dataSml): 
-        self.data1 = dataLrg#call first instance
-        self.data2 = dataSml#call second instance
-        self.size1 = len(dataLrg)
-        self.size2 = len(dataSml)
-
-    def __len__(self):
-        return self.size1
-
-    def __getitem__(self,index):
-        return self.data1[index], self.data2[index%self.size2]
 
 def get_dataset(params):
     if params.data_set=="mnist":
-        params.labelled, params.unlabelled, params.validation =  get_mnist(params)
+        params.labelled, params.unlabelled, params.validation, params.allData =  get_mnist(params)
         params.n_labels = 10
         params.xdim = 784
     elif params.data_set=="amzn":
