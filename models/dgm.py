@@ -27,9 +27,10 @@ class Classifier(nn.Module):
     def forward(self, x):
         # x = self.drp_5(x)
         x = F.relu(self.dense(x))
-        x = F.softmax(self.logits(x), dim=-1)
-        # x = F.sigmoid(self.logits(x))#, dim=-1)
-        return x
+        #x = F.softmax(self.logits(x), dim=-1)
+        preds = F.sigmoid(self.logits(x))#, dim=-1)
+        logits = F.relu(self.logits(x))
+	return logits, preds
 
 # class Classifier(torch.nn.Module):
     

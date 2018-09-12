@@ -39,6 +39,6 @@ def log_standard_categorical(p):
     prior = F.softmax(torch.ones_like(p), dim=1)
     prior.requires_grad = False
 
-    cross_entropy = -torch.sum(p * torch.log(prior + 1e-8), dim=1)
+    cross_entropy = -torch.mean(p * torch.log(prior + 1e-8), dim=1)
 
     return cross_entropy

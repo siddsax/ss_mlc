@@ -34,6 +34,7 @@ print("CUDA: {}".format(params.cuda))
 if __name__ == "__main__":
     viz = Visualizer(params)
     params.best = 1e10
+    params.temp = 1.0
     params.n_labels = 10
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
@@ -72,7 +73,7 @@ if __name__ == "__main__":
 # 54.81946468 | 55.79
 # | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE
 # | 56.01255894 Temp 1 BCE
-# 54.22291756 | 56.23233914 Temp 1 BCE ST-gumbel-mc 
+# 54.22291756 | 56.23233914 Temp 1 BCE ST-gumbel-mc
 # 54.78807092 | 56.51491284 Temp 1 BCE ST-gumbel-mc
 # 56.01255894 | 56.86028004 Temp 1 BCE ST-gumbel-mc Dropout
 

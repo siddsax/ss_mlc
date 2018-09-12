@@ -77,7 +77,7 @@ class SVI(nn.Module):
         xs, ys = (x, y)
 
         # Enumerate choices of label
-        logits = self.model.classify(x)
+        logits, preds = self.model.classify(x)
         if not is_labelled:
             if normal:
                 ys = enumerate_discrete(xs, self.model.y_dim)
@@ -85,10 +85,13 @@ class SVI(nn.Module):
             else:
                 if temp is None:
                     print("Error, temperature not given: Exiting")
-                    exit()
-                # ys = logits
+                    exit() 
                 ys = gumbel_multiSample(logits, temp)
-                # ys = gumbel_softmax(logits, temp)
+                one = ys[0].data.cpu().numpy()		
+		import pdb
+		pdb.set_trace()
+		np.savetxt('one.csv', one, delimiter = ',')
+		# ys = gumbel_softmax(logits, temp)
                 # ys_sp = ys.data.cpu().numpy()[0]
                 # import numpy as np
                 # np.savetxt("foo.csv", ys_sp, delimiter=",")
@@ -106,16 +109,16 @@ class SVI(nn.Module):
         # Equivalent to -L(x, y)
         L = likelihood - next(self.beta) * self.model.kl_divergence + prior
         if is_labelled:
-            return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy())
+            return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
 
         if normal:
             L = L.view_as(logits.t()).t()
             L = torch.sum(torch.mul(logits, L), dim=-1)
 
         # Calculate entropy H(q(y|x)) and sum over all labels
-        # H = -torch.sum(torch.mul(logits, torch.log(logits + 1e-8)), dim=-1)
-        H = - (torch.sum(torch.mul(logits, torch.log(logits + 1e-8)) + torch.mul(1 - logits, torch.log(1 - logits + 1e-8)), dim=-1))
+        # H = -torch.sum(torch.mul(preds, torch.log(preds + 1e-8)), dim=-1)
+        H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
 
-        # Equivalent to -U(x)
-        U = L + H
-        return - torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy())
+        # Carefully written
+        U = - L# + H
+        return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())

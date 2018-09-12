@@ -17,72 +17,72 @@ from precision_k import precision_k
 
 def modelTrPass(model, optimizer, elbo, params, viz=None):
   model.train()
-  # print("Epoch: {}".format(params.epoch))
-  total_loss, labelled_loss, unlabelled_loss, mseLoss = (0, 0, 0, 0)
   iterator = 0
   m = len(params.unlabelled)
   # m = len(params.labelled)
-  #for (u, _), (x, y) in params.allData:
-  #print(len(params.labelled))
-  #print(len(params.unlabelled))
-  #print(len(params.allData))
-  #exit()
-  for (x,y) in params.unlabelled:
+  for (u, _), (x, y) in params.allData:
+  #for (x,y) in params.unlabelled:
       iterator += 1.0
-      params.temp = max(.5, 1.0*np.exp(-params.step*3e-4))
+      params.temp = max(.5, 1.0*np.exp(-params.step*1e-4)) #default
+      # params.temp = .5 + .5* np.exp(-params.step*2.7e-4)
+
       x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
       if params.cuda:
         x, y = x.cuda(device=0), y.cuda(device=0)
 
       # Add auxiliary classification loss q(y|x)
-      logits = model.classify(x)
+      logits, preds = model.classify(x)
 
       # classication_loss = - torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
-      classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
-      J_alpha = params.alpha * classication_loss
+      classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
+      
 
       if params.ss:
-        L, kl, recon = elbo(x, y=y)
+        L, kl, recon, prior = elbo(x, y=y)
         u = Variable(u).squeeze().float()
         if params.cuda:
           u = u.cuda(device=0)
-        U, _, _ = elbo(u, temp=params.temp, normal=params.normal)
-        J_alpha += L + U
-        unlabelled_loss = U.data.cpu().numpy()
-        labelled_loss = L.data.cpu().numpy()
+        U, klU, reconU, H, priorU = elbo(u, temp=params.temp, normal=params.normal)
+        J_alpha = L + classication_loss + U
       else:
-        unlabelled_loss = 0.0
-        labelled_loss = 0.0
-        kl = 0.0
+        kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
         recon = 0.0
-
+        J_alpha = classication_loss
+      
       total_loss = J_alpha.data.cpu().numpy()
       J_alpha.backward()
       optimizer.step()
       optimizer.zero_grad()
 
-      mseLoss = classication_loss.data.cpu().numpy()
+      mseLoss = classication_loss.data.cpu().numpy()/ params.alpha
       params.step += 1
-      P = 100*precision_k(y.data.cpu().numpy().squeeze(),logits.data.cpu().numpy().squeeze(), 5)
+      P = 100*precision_k(y.data.cpu().numpy().squeeze(),preds.data.cpu().numpy().squeeze(), 5)
+
+      # Losses:
+      # L = KL + Recon
+      # U = KLu + Reconu + H
 
       # if(iterator % int(max(m/12, 5))==0):
-      # # if((iterator % 12)==0):
-      #   toPrint = "[TRAIN]:(Epoch, Iteration):({}, {}/{}); Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, temperature {}".format(
-      #   float(params.epoch), float(iterator), float(m), float(total_loss), float(labelled_loss), float(kl), float(recon), float(unlabelled_loss), float(mseLoss), params.temp)
-      #   toPrint += " || Prec. " + str(P[0]) + " " + str(P[-1])
-      #   print(toPrint)
+      if((iterator % 12)==0):
+        toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(
+          float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
+        )
+        # toPrint = "[TRAIN]:(Epoch, Iteration):({}, {}/{}); Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, temperature {}".format(
+        # float(params.epoch), float(iterator), float(m), float(total_loss), float(labelled_loss), float(kl), float(recon), float(unlabelled_loss), float(mseLoss), params.temp)
+        # toPrint += " || Prec. " + str(P[0]) + " " + str(P[-1])
+        print(toPrint)
 
 
-       # if (params.epoch*m + iterator)/12 > 4:
-       #   lossDict = {}
-       #   for key, val in zip(['Prec_1', 'BCELoss', 'kl', 'Recon'], [P[0], mseLoss, kl, recon]):
-       #       lossDict[key] = val
-       #   viz.plot_current_losses((params.epoch*m + iterator)/12, lossDict)
+      # if (params.epoch*m + iterator)/12 > 4:
+      #   lossDict = {}
+      #   for key, val in zip(['Prec_1', 'BCELoss', 'kl', 'Recon'], [P[0], mseLoss, kl, recon]):
+      #       lossDict[key] = val
+      #   viz.plot_current_losses((params.epoch*m + iterator)/12, lossDict)
 
       # if((iterator % int(max(m/4, 5))==0) and iterator>0):
       # if(((iterator % 120)==0) and iterator>0):
         # modelTePass(model, elbo, params, optimizer)#, testBatch=np.inf)
-  return [P[0], mseLoss], ['Prec_1', 'BCELoss']
+  return [P[0], mseLoss, 100*params.temp], ['Prec_1', 'BCELoss', 'Temperaturex100']
 
 def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   model.eval()
@@ -103,12 +103,12 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
       if params.cuda:
           x, y = x.cuda(device=0), y.cuda(device=0)
 
-      U, _, _ = elbo(x, temp=params.temp, normal=params.normal)
-      L, klA, reconA = elbo(x, y=y)
-      logits = model.classify(x)
+      U, _, _, _, _ = elbo(x, temp=params.temp, normal=params.normal)
+      L, klA, reconA, prior = elbo(x, y=y)
+      logits, preds = model.classify(x)
 
       # classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
-      classication_loss = torch.nn.functional.binary_cross_entropy(logits, y)*y.shape[-1]
+      classication_loss = torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
       J_alpha = L + params.alpha * classication_loss + U
 
       total_loss += J_alpha.data.cpu().numpy()
@@ -117,10 +117,10 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
       mseLoss += classication_loss.data.cpu().numpy()#torch.mean((pred_idx.data == lab_idx.data).float())
       kl += klA
       recon += reconA
-      ypred.append(logits.data.cpu().numpy().squeeze())
+      ypred.append(preds.data.cpu().numpy().squeeze())
       ygt.append(y.data.cpu().numpy().squeeze())
 
-      lp, _, _= elbo(x, y=gumbel_multiSample(logits, params.temp))
+      lp, _, _, _= elbo(x, y=gumbel_multiSample(preds, params.temp))
       Lpred += lp.data.cpu().numpy()
       Lgt += L.data.cpu().numpy()
 
@@ -130,8 +130,8 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   if mseLoss / m < params.best:
     params.best = mseLoss / m
     save_model(model, optimizer, params.epoch, params, "/model_best_test_lr3_" + str(params.ss))
-  toPrint = "[TEST]:Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}".format(
-        float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP)
+  toPrint = "[TEST]:Temp {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}".format(
+        float(params.temp), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP)
   toPrint += " || Prec. " + str(P[0]) + " " + str(P[-1])
 #   for i in range(5):
 #       toPrint += "{} ".format(P[i])
