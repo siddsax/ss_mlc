@@ -25,8 +25,10 @@ params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do 
 params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mnist; delicious;')
 params.add_argument('--mn', dest='name', type=str, default="", help='mnist; delicious;')
 params.add_argument('--lm', dest='lm', type=int, default=0, help='mnist; delicious;')
-params.add_argument('--a', dest='alpha', type=float, default=4.5, help='mnist; delicious;')
+params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
+params.add_argument('--f', dest='factor', type=int, default=5, help='mnist; delicious;')
+
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))

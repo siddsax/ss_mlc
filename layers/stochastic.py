@@ -142,4 +142,4 @@ def gumbel_multiSample(logits, temperature, eps=1e-20):
     y_hard = torch.zeros_like(y).view(-1, shape[-1])
     y_hard.scatter_(1, ind.view(-1, 1), 1)
     y_hard = y_hard.view(*shape)
-    return y#(y_hard - y).detach() + y#y
+    return (y_hard - y).detach() + y#y

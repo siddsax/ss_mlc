@@ -99,13 +99,13 @@ class SVI(nn.Module):
         # p(x|y,z)
         # likelihood = -self.likelihood(reconstruction, xs)
         diff = reconstruction - xs
-        likelihood = - self.params.reconFact * torch.sum(torch.mul(diff, diff), dim=-1)
+        likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
 
         # p(y)
         prior = -log_standard_categorical(ys)
 
-        # Equivalent to -L(x, y)
-        L = likelihood - next(self.beta) * self.model.kl_divergence + prior
+        # L = (1 - self.params.reconFact) * likelihood - next(self.beta) * self.model.kl_divergence + prior
+        L = prior + likelihood - self.params.reconFact * self.model.kl_divergence
         if is_labelled:
             return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
 
@@ -118,5 +118,5 @@ class SVI(nn.Module):
         H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
 
         # Carefully written
-        U = - L# + H
+        U = - L #+ H
         return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
