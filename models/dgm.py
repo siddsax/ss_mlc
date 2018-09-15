@@ -26,9 +26,9 @@ class Classifier(nn.Module):
         self.logitsN = nn.Linear(h_dim, y_dim)
         self.bn = nn.BatchNorm1d(h_dim)
     def forward(self, x):
-        x = self.drp_5(x)
+        # x = self.drp_5(x)
         x = self.dense(x)
-        x = self.bn(x)
+        # x = self.bn(x)
         x = F.relu(x)
         #x = F.softmax(self.logits(x), dim=-1)
         predsP = self.logitsP(x)
