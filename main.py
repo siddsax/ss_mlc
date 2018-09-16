@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     if(params.lm):
         print("================= Loading Model ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + str(params.ss), optimizer)
+        model, optimizer, init = load_model(model, 'saved_models/model_best_test_lr3_' + str(params.ss), optimizer)
         #model, optimizer, init = load_model(model, 'saved_models/model_best_test_0', optimizer)
 
     for epoch in range(init, params.epochs):

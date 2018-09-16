@@ -135,7 +135,7 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
     params.bestP = P[0]
   if mseLoss / m < params.best:
     params.best = mseLoss / m
-    save_model(model, optimizer, params.epoch, params, "/model_best_test_lr3_" + str(params.ss))
+    save_model(model, optimizer, params.epoch, params, "/model_best_test_" + str(params.ss))
   toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}, best_bce {}".format(
         float(params.temp), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP, params.best)
   toPrint += " || Prec. " + str(P[0]) + " " + str(P[-1])
