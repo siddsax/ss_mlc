@@ -23,8 +23,9 @@ params = argparse.ArgumentParser(description='Process some integers.')
 params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mnist; delicious;')
-params.add_argument('--mn', dest='name', type=str, default="", help='mnist; delicious;')
-params.add_argument('--lm', dest='lm', type=int, default=0, help='mnist; delicious;')
+params.add_argument('--zz', dest='name', type=str, default="", help='mnist; delicious;')
+params.add_argument('--mn', dest='mn', type=str, default="", help='name')
+params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or not from the above name')
 params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
@@ -57,8 +58,8 @@ if __name__ == "__main__":
 
     if(params.lm):
         print("================= Loading Model ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_test_lr3_' + str(params.ss), optimizer)
-        #model, optimizer, init = load_model(model, 'saved_models/model_best_test_0', optimizer)
+        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
+        # model, optimizer, init = load_model(model, 'saved_models/model_best_test_1', optimizer)
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch

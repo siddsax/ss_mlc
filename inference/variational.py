@@ -88,11 +88,6 @@ class SVI(nn.Module):
                     print("Error, temperature not given: Exiting")
                     exit()
                 ys = gumbel_multiSample(logits, temp)
-                one = ys[0].data.cpu().numpy()
-                np.savetxt('one.csv', one, delimiter = ',')
-                # import pdb
-                # pdb.set_trace()
-                # ys = gumbel_softmax(logits, temp)
 
         reconstruction = self.model(xs, ys)
 
