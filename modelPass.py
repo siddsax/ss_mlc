@@ -21,7 +21,7 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
   m = len(params.unlabelled)
   # m = len(params.labelled)
   for (u, _), (x, y) in params.allData:
-  # for (x,y) in params.unlabelled:
+  #for (x,y) in params.unlabelled:
       iterator += 1.0
       # np.exp(-params.step*3e-4)
       params.reconFact = torch.autograd.Variable(torch.from_numpy(np.array(1 - np.exp(-params.step*params.factor*1e-5)))).float()
@@ -60,14 +60,25 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
       mseLoss = classication_loss.data.cpu().numpy()
       params.step += 1
 
-      # if(iterator % int(max(m/12, 5))==0):
-      if((iterator % 12)==0):
+      if(iterator % int(max(m/3, 12))==0):
+      ######################################################################################
+      #if((iterator % 40)==0):
         toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(
           float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
         )
         print(toPrint)
-      mseLoss = mseLoss / params.alpha
+        
+        
+        #lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, testBatch=1000)
+        #losses = lossesT
+        #losses_names = losses_namesT
 
+        #lossDict = {}
+        #for key, val in zip(losses_names, losses):
+        #  lossDict[key] = val
+        #viz.plot_current_losses(params.step/40, lossDict)
+      #######################################################################################
+  mseLoss = mseLoss / params.alpha
   P = 100*precision_k(y.data.cpu().numpy().squeeze(),preds.data.cpu().numpy().squeeze(), 5)
   if params.ss:
     return [P[0], mseLoss, 100*params.temp, recon], ['Prec_1', 'BCELoss', 'Temperaturex100', 'lblLossTrain']
@@ -120,9 +131,9 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   if mseLoss / m < params.best:
     params.best = mseLoss / m
     save_model(model, optimizer, params.epoch, params, "/model_best_test_" + params.mn + "_" + str(params.ss))
-  toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}, best_bce {}".format(
+  toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}, best_bce {:.2f}".format(
         float(params.temp), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP, params.best)
-  toPrint += " || Prec. " + str(P[0]) + " " + str(P[-1])
+  toPrint += " || Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
 
   print(toPrint)
   print("="*100)

@@ -106,7 +106,7 @@ def get_dataset(params):
         params.labelled, params.unlabelled, params.validation, params.allData =  get_mnist(params)
         params.n_labels = 10
         params.xdim = 784
-    elif params.data_set=="amzn":
+    elif params.data_set=="amzn":# or params.data_set=="nus":
 	print("TYPE 2")
         print("Loading dataset " + params.data_set)
         print("="*50)
