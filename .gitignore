@@ -1,4 +1,3 @@
-.vscode/
 *.lprof
 saved_models/
 datasets

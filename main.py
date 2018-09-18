@@ -29,7 +29,6 @@ params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or 
 params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
-params.add_argument('--ty', dest='type', type=int, default=0, help='1 means 1O')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
@@ -48,7 +47,7 @@ if __name__ == "__main__":
     print(params.alpha)
     params.epochs = 2510
     params.step = 0
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600]], params)
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600]])
     if params.cuda:
         model = model.cuda()
     # , sampler=sampler) #,beta=beta)
@@ -59,8 +58,8 @@ if __name__ == "__main__":
 
     if(params.lm):
         print("================= Loading Model ============================")
-        #model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
-        model, optimizer, init = load_model(model, 'saved_models/model_best_test__0', optimizer)
+        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
+        # model, optimizer, init = load_model(model, 'saved_models/model_best_test_1', optimizer)
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
