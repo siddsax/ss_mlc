@@ -29,6 +29,7 @@ params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or 
 params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
+params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     print(params.alpha)
     params.epochs = 2510
     params.step = 0
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600]])
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600]], params)
     if params.cuda:
         model = model.cuda()
     # , sampler=sampler) #,beta=beta)

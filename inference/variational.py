@@ -87,6 +87,7 @@ class SVI(nn.Module):
                 if temp is None:
                     print("Error, temperature not given: Exiting")
                     exit()
+                # ys = gumbel_softmax(preds, temp)
                 ys = gumbel_multiSample(logits, temp)
 
         reconstruction = self.model(xs, ys)
