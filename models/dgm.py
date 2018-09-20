@@ -63,11 +63,8 @@ class Classifier(nn.Module):
         x = F.relu(x)
         #------------------------------------------------------
         if self.type:
-            kk = 0 
-            # x = F.sigmoid(self.logits(x))
-            # x1 = x.view(x.shape[0], x.shape[1], 1)
-            # logits = torch.cat((x1, 1 - x1), dim=-1)
-            # return torch.log(logits+1e-8), x
+            logits = self.logits(x)
+            preds = F.sigmoid(x)
         ########################################################
         else:
             predsP = self.logitsP(x)
@@ -76,9 +73,8 @@ class Classifier(nn.Module):
             predsN = predsN.view(predsN.shape[0], predsN.shape[1], 1)
             logits = torch.cat((predsP, predsN), dim=-1)
             preds = F.softmax(logits, dim=-1)[:,:,0]
-            return logits, preds
         ########################################################
-
+        return logits, preds
 
 class DeepGenerativeModel(VariationalAutoencoder):
     def __init__(self, dims, params):

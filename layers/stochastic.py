@@ -127,7 +127,8 @@ def gumbel_softmax(logits, temperature, eps=1e-20):
     input: [*, n_class]
     return: [*, n_class] an one-hot vector
     """
-    y = gumbel_softmax_sample(torch.log(logits + eps), temperature)
+    y = gumbel_softmax_sample(logits, temperature)
+    # y = gumbel_softmax_sample(torch.log(logits + eps), temperature)
     shape = y.size()
     _, ind = y.max(dim=-1)
     y_hard = torch.zeros_like(y).view(-1, shape[-1])
@@ -136,6 +137,7 @@ def gumbel_softmax(logits, temperature, eps=1e-20):
     return (y_hard - y).detach() + y#y
 
 def gumbel_multiSample(logits, temperature, eps=1e-20):
+    # y = gumbel_softmax_sample(torch.log(logits + eps), temperature)
     y = gumbel_softmax_sample(logits, temperature)[:,:,0]
     shape = y.size()
     _, ind = y.max(dim=-1)
