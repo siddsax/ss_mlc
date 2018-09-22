@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # , sampler=sampler) #,beta=beta)
     elbo = SVI(model, params, likelihood=binary_cross_entropy)
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=1e-4, betas=(0.9, 0.999))
+        model.parameters(), lr=1e-3, betas=(0.9, 0.999))
     init = 0
 
     if(params.lm):

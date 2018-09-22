@@ -12,33 +12,6 @@ def weights_init(m):
     	torch.nn.init.xavier_uniform_(m)
     else:
 	torch.nn.init.xavier_uniform(m)
-# class Classifier(nn.Module):
-#     def __init__(self, dims):
-#         """
-#         Single hidden layer classifier
-#         with softmax output.
-#         """
-#         super(Classifier, self).__init__()
-#         [x_dim, h_dim, y_dim] = dims
-#         self.drp_5 = nn.Dropout(.5)
-#         self.dense = nn.Linear(x_dim, h_dim)
-#         self.logitsP = nn.Linear(h_dim, y_dim)
-#         self.logitsN = nn.Linear(h_dim, y_dim)
-#         self.bn = nn.BatchNorm1d(h_dim)
-#     def forward(self, x):
-#         # x = self.drp_5(x)
-#         x = self.dense(x)
-#         # x = self.bn(x)
-#         x = F.relu(x)
-#         #x = F.softmax(self.logits(x), dim=-1)
-#         predsP = self.logitsP(x)
-#         predsN = self.logitsN(x)
-#         predsP = predsP.view(predsP.shape[0], predsP.shape[1], 1)
-#         predsN = predsN.view(predsN.shape[0], predsN.shape[1], 1)
-#         logits = torch.cat((predsP, predsN), dim=-1)
-#         preds = F.softmax(logits, dim=-1)[:,:,0]
-#         return logits, preds
-
 class Classifier(nn.Module):
     def __init__(self, dims, typ=0):
         """
@@ -49,7 +22,8 @@ class Classifier(nn.Module):
         [x_dim, h_dim, y_dim] = dims
         self.type = typ
         self.drp_5 = nn.Dropout(.5)
-        self.dense = nn.Linear(x_dim, h_dim)
+        self.dense = nn.Linear(x_dim, 2*h_dim)
+        self.dense_2 = nn.Linear(2*h_dim, h_dim)
         if self.type:
             self.logits = nn.Linear(h_dim, y_dim)
         else:
@@ -57,9 +31,11 @@ class Classifier(nn.Module):
             self.logitsN = nn.Linear(h_dim, y_dim)
         self.bn = nn.BatchNorm1d(h_dim)
     def forward(self, x):
-        x = self.drp_5(x)
         x = self.dense(x)
-        x = self.bn(x)
+        x = F.relu(x)
+
+        x = self.drp_5(x)
+        x = self.dense_2(x)
         x = F.relu(x)
         #------------------------------------------------------
         if self.type:
