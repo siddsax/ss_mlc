@@ -22,8 +22,8 @@ class Classifier(nn.Module):
         [x_dim, h_dim, y_dim] = dims
         self.type = typ
         self.drp_5 = nn.Dropout(.5)
-        self.dense = nn.Linear(x_dim, 2*h_dim)
-        self.dense_2 = nn.Linear(2*h_dim, h_dim)
+        self.dense = nn.Linear(x_dim, int(1.5*h_dim))
+        self.dense_2 = nn.Linear(int(1.5*h_dim), h_dim)
         if self.type:
             self.logits = nn.Linear(h_dim, y_dim)
         else:

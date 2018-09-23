@@ -48,13 +48,13 @@ if __name__ == "__main__":
     print(params.alpha)
     params.epochs = 2510
     params.step = 0
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600]], params)
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600, 600]], params)
     if params.cuda:
         model = model.cuda()
     # , sampler=sampler) #,beta=beta)
     elbo = SVI(model, params, likelihood=binary_cross_entropy)
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=1e-3, betas=(0.9, 0.999))
+        model.parameters(), lr=1e-4, betas=(0.9, 0.999))
     init = 0
 
     if(params.lm):
@@ -74,6 +74,7 @@ if __name__ == "__main__":
         for key, val in zip(losses_names, losses):
             lossDict[key] = val
         viz.plot_current_losses(epoch, lossDict)
+        print("="*100)
 
 # 54.81946468 | 55.79
 # | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE

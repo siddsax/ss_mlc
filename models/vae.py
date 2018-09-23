@@ -52,15 +52,21 @@ class Encoder(nn.Module):
         self.bn_cat = nn.BatchNorm1d(x_dim)
         self.drp_5 = nn.Dropout(.5)
         linear_layers = [nn.Linear(neurons[i-1], neurons[i]) for i in range(1, len(neurons))]
+        bn_layers = [nn.BatchNorm1d(neurons[i]) for i in range(1, len(neurons))]
 
         self.hidden = nn.ModuleList(linear_layers)
+        self.bn_layers = nn.ModuleList(bn_layers)
         self.sample = sample_layer(h_dim[-1], z_dim)
 
     def forward(self, x):
         x = self.bn_cat(x)
         # x = self.drp_5(x)
-        for layer in self.hidden:
-            x = F.relu(self.drp_5(layer(x)))
+        for i, (layer, bn_layer) in enumerate(zip(self.hidden, self.bn_layers)):
+            if i < len(self.hidden) - 1:
+                x = F.relu(self.drp_5(bn_layer(layer(x))))
+            else:
+                # bn_layer = self.bn_layers[i]
+                x = F.relu(self.drp_5(layer(x)))
         return self.sample(x)
 
 class Decoder(nn.Module):

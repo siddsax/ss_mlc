@@ -74,6 +74,8 @@ class SVI(nn.Module):
     def forward(self, x, y=None, temp=None, normal=0):
         is_labelled = False if y is None else True
 
+        if not is_labelled:
+            x = x.repeat(10, 1)
         # Prepare for sampling
         xs, ys = (x, y)
 
@@ -101,7 +103,7 @@ class SVI(nn.Module):
         prior = -log_standard_categorical(ys)
 
         # L = (1 - self.params.reconFact) * likelihood - next(self.beta) * self.model.kl_divergence + prior
-        L = prior + likelihood - self.params.reconFact * self.model.kl_divergence
+        L = prior + likelihood #- self.params.reconFact * self.model.kl_divergence
         if is_labelled:
             return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
 
@@ -114,5 +116,5 @@ class SVI(nn.Module):
         H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
 
         # Carefully written
-        U = - L #+ H
+        U = - L #+ self.params.reconFact *H
         return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
