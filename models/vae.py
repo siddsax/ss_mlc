@@ -89,15 +89,21 @@ class Decoder(nn.Module):
         linear_layers = [nn.Linear(neurons[i-1], neurons[i]) for i in range(1, len(neurons))]
         self.hidden = nn.ModuleList(linear_layers)
         # self.bn_cat = nn.BatchNorm1d(z_dim)
-
+	bn_layers = [nn.BatchNorm1d(neurons[i]) for i in range(1, len(neurons))]
         self.reconstruction = nn.Linear(h_dim[-1], x_dim)
-
+	self.bn_layers = nn.ModuleList(bn_layers)
         self.output_activation = nn.Sigmoid()
 
     def forward(self, x):
         # x = self.bn_cat(x)
-        for layer in self.hidden:
-            x = F.relu(layer(x))
+        #for layer in self.hidden:
+        for i, (layer, bn_layer) in enumerate(zip(self.hidden, self.bn_layers)):
+	    #if i == 2:
+            #    x = F.relu(bn_layer(layer(x)))
+            #else:
+                # bn_layer = self.bn_layers[i]
+            #    x = F.relu(layer(x))
+	    x = F.relu(layer(x))
         return self.output_activation(self.reconstruction(x))
 
 

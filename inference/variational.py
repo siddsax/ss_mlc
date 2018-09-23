@@ -102,7 +102,7 @@ class SVI(nn.Module):
         prior = -log_standard_categorical(ys)
 
         # L = (1 - self.params.reconFact) * likelihood - next(self.beta) * self.model.kl_divergence + prior
-        L = likelihood # + prior#- self.params.reconFact * self.model.kl_divergence
+        L = likelihood  + prior- self.params.reconFact * self.model.kl_divergence
         if is_labelled:
             return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
 
