@@ -13,7 +13,7 @@ from models import DeepGenerativeModel
 from itertools import repeat, cycle
 from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
-from precision_k import precision_k
+from precision_k import *
 
 def modelTrPass(model, optimizer, elbo, params, viz=None):
   model.train()
@@ -21,7 +21,7 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
   m = len(params.unlabelled)
   # m = len(params.labelled)
   for (u, _), (x, y) in params.allData:
-  # for (x,y) in params.unlabelled:
+  #for (x,y) in params.unlabelled:
       iterator += 1.0
       # np.exp(-params.step*3e-4)
       params.reconFact = torch.autograd.Variable(torch.from_numpy(np.array(1 - np.exp(-params.step*params.factor*1e-5)))).float()
@@ -66,6 +66,7 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
           float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
         )
         print(toPrint)
+	model.fit_thresholds(x.data.cpu().numpy(), preds.data.cpu().numpy(), y.data.cpu().numpy())
         lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, testBatch=np.inf)
       mseLoss = mseLoss / params.alpha
 
@@ -81,6 +82,7 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   m = len(params.validation)
   ypred = []
   ygt = []
+  XAll = []
   dataPts = 0
   for x, y in params.validation:
       x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
@@ -107,12 +109,13 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
       reconU += reconAU
       ypred.append(preds.data.cpu().numpy().squeeze())
       ygt.append(y.data.cpu().numpy().squeeze())
-
+      XAll.append(x.data.cpu().numpy().squeeze())
       lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temp))
       Lpred += lp.data.cpu().numpy()
       Lgt += L.data.cpu().numpy()
 
-  P = 100*precision_k(np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0),5)
+  ygt, ypred, XAll = np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0), np.concatenate(XAll, axis=0)
+  P = 100*precision_k(ygt, ypred,5)
   if P[0] > params.bestP:
     params.bestP = P[0]
   # save_model(model, optimizer, params.epoch, params, "/model_best_test_" + params.mn + "_" + str(params.ss))
@@ -124,6 +127,14 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   toPrint = 'recon {:.2f}, reconU {:.2f} lblLossPred {:.2f}, lblLossGT {:.2f}'.format(float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
   toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
   print("-"*20)
+
+  # Test the model
+  preds = model.predict_threshold(XAll, ypred)
+
+  f1_macro = f1_measure(ygt, preds, average='macro')
+  f1_micro = f1_measure(ygt, preds, average='micro')
+
+  toPrint += "f1_macro {:.2f} f1_micro {:.2f}".format(100*f1_macro, 100*f1_micro)
   print(toPrint)
   optimizer.zero_grad()
   model.train()

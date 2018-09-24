@@ -1,5 +1,11 @@
 import numpy as np
 import scipy.io as sio
+from sklearn.metrics import f1_score
+
+def f1_measure(true_mat, preds, average='binary'):
+    f1_scores = f1_score(true_mat, preds, average=average)
+    return f1_scores
+
 def precision_k(true_mat, score_mat,k):
     p = np.zeros((k,1))
     rank_mat = np.argsort(score_mat)
