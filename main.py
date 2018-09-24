@@ -6,6 +6,7 @@ from operator import __or__
 from torch.utils.data.sampler import SubsetRandomSampler
 from torchvision.datasets import MNIST
 import torchvision.transforms as transforms
+from datetime import datetime
 # sys.path.append("../semi-supervised")
 from utils import *
 from models import DeepGenerativeModel
@@ -14,6 +15,7 @@ from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
 from modelPass import modelTrPass, modelTePass
 import argparse
+import os
 from visualizer import Visualizer
 torch.manual_seed(1337)
 np.random.seed(1337)
@@ -36,7 +38,21 @@ params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
 
 if __name__ == "__main__":
+    lr = 1e-3
     viz = Visualizer(params)
+    if not os.path.exists('logs'):
+    	os.makedirs('logs')
+    logFile = params.mn if len(params.mn) else str(datetime.now())
+    print("=================== Name of logFile is =======    " + logFile + "     ==========")
+    logFile = open('logs/' + logFile + '.logs', 'w+')
+    dgm = open('models/dgm.py').read()
+    logFile.write(" WE are running on " + str(params.ss) + "    ====\n")
+    logFile.write(" WE are having LR " + str(lr) + "    ====\n")    
+    logFile.write('=============== DGM File ===================\n\n')
+    logFile.write(dgm)
+    logFile.write('\n\n=============== VAE File ===================\n\n')
+    logFile.write(open('models/vae.py').read())
+    
     params.best = 1e10
     params.temp = 1.0
     params.reconFact = 1.0
@@ -54,7 +70,7 @@ if __name__ == "__main__":
     # , sampler=sampler) #,beta=beta)
     elbo = SVI(model, params, likelihood=binary_cross_entropy)
     optimizer = torch.optim.Adam(
-        model.parameters(), lr=1e-3, betas=(0.9, 0.999))
+        model.parameters(), lr=lr, betas=(0.9, 0.999))
     init = 0
 
     if(params.lm):
@@ -64,9 +80,9 @@ if __name__ == "__main__":
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
-        losses, losses_names = modelTrPass(model, optimizer, elbo, params, viz=viz)
+        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, viz=viz)
         if epoch % 1 == 0:
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, testBatch=np.inf)
+            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
             losses += lossesT
             losses_names += losses_namesT
 

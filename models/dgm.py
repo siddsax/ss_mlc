@@ -32,11 +32,11 @@ class Classifier(nn.Module):
             self.logitsN = nn.Linear(h_dim, y_dim)
         self.bn = nn.BatchNorm1d(h_dim)
     def forward(self, x):
-        x = self.drp_5(x)
+        #x = self.drp_5(x)
         x = self.dense(x)
         x = F.relu(x)
 
-        #x = self.drp_5(x)
+        x = self.drp_5(x)
         x = self.dense_2(x)
         x = F.relu(x)
         #------------------------------------------------------
@@ -145,7 +145,6 @@ class DeepGenerativeModel(VariationalAutoencoder):
         T = self.t_models.predict(X)
         preds = probs >= T
         return preds
-
 
     def sample(self, z, y):
         """

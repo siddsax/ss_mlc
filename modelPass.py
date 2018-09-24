@@ -15,7 +15,7 @@ from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
 from precision_k import *
 
-def modelTrPass(model, optimizer, elbo, params, viz=None):
+def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
   model.train()
   iterator = 0
   m = len(params.unlabelled)
@@ -67,7 +67,7 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
         )
         print(toPrint)
 	model.fit_thresholds(x.data.cpu().numpy(), preds.data.cpu().numpy(), y.data.cpu().numpy())
-        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, testBatch=np.inf)
+        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
       mseLoss = mseLoss / params.alpha
 
   P = 100*precision_k(y.data.cpu().numpy().squeeze(),preds.data.cpu().numpy().squeeze(), 5)
@@ -76,7 +76,7 @@ def modelTrPass(model, optimizer, elbo, params, viz=None):
   else:
     return [P[0], mseLoss], ['Prec_1', 'BCELoss']
 
-def modelTePass(model, elbo, params, optimizer, testBatch=5000):
+def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
   model.eval()
   mseLoss, total_loss, labelled_loss, unlabelled_loss, kl, recon, Lpred, Lgt, reconU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   m = len(params.validation)
@@ -127,7 +127,6 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   toPrint = 'recon {:.2f}, reconU {:.2f} lblLossPred {:.2f}, lblLossGT {:.2f}'.format(float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
   toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
   print("-"*20)
-
   # Test the model
   preds = model.predict_threshold(XAll, ypred)
 
@@ -135,6 +134,8 @@ def modelTePass(model, elbo, params, optimizer, testBatch=5000):
   f1_micro = f1_measure(ygt, preds, average='micro')
 
   toPrint += "f1_macro {:.2f} f1_micro {:.2f}".format(100*f1_macro, 100*f1_micro)
+  logFile.write(toPrint + '\n')
+  logFile.flush()
   print(toPrint)
   optimizer.zero_grad()
   model.train()

@@ -1,4 +1,5 @@
 *.lprof
+*.swp
 saved_models/
 datasets
 __pycache__
