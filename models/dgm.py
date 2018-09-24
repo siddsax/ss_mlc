@@ -42,10 +42,10 @@ class Classifier(nn.Module):
         #------------------------------------------------------
         if self.type:
             kk = 0 
-            # x = F.sigmoid(self.logits(x))
-            # x1 = x.view(x.shape[0], x.shape[1], 1)
-            # logits = torch.cat((x1, 1 - x1), dim=-1)
-            # return torch.log(logits+1e-8), x
+            x = F.sigmoid(self.logits(x))
+            x1 = x.view(x.shape[0], x.shape[1], 1)
+            logits = torch.cat((x1, 1 - x1), dim=-1)
+            return torch.log(logits+1e-8), x
         ########################################################
         else:
             predsP = self.logitsP(x)
