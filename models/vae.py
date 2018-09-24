@@ -59,7 +59,7 @@ class Encoder(nn.Module):
         self.sample = sample_layer(h_dim[-1], z_dim)
 
     def forward(self, x):
-        # x = self.bn_cat(x)
+        x = self.bn_cat(x)
         # x = self.drp_5(x)
         for i, (layer, bn_layer) in enumerate(zip(self.hidden, self.bn_layers)):
             x = F.relu(layer(x))
@@ -90,23 +90,21 @@ class Decoder(nn.Module):
         linear_layers = [nn.Linear(neurons[i-1], neurons[i]) for i in range(1, len(neurons))]
         self.hidden = nn.ModuleList(linear_layers)
         self.bn_cat = nn.BatchNorm1d(z_dim)
-	bn_layers = [nn.BatchNorm1d(neurons[i]) for i in range(1, len(neurons))]
+        bn_layers = [nn.BatchNorm1d(neurons[i]) for i in range(1, len(neurons))]
         self.reconstruction = nn.Linear(h_dim[-1], x_dim)
-	self.bn_layers = nn.ModuleList(bn_layers)
+        self.bn_layers = nn.ModuleList(bn_layers)
         self.output_activation = nn.Sigmoid()
         self.drp_5 = nn.Dropout(.5)
 
     def forward(self, x):
         # x = self.bn_cat(x)
-        x = self.drp_5(x)
-    	#for layer in self.hidden:
+        # x = self.drp_5(x)
         for i, (layer, bn_layer) in enumerate(zip(self.hidden, self.bn_layers)):
             x = F.relu(layer(x))
-	        #if i == -1:
-            #    x = F.relu(bn_layer(layer(x)))
-            #else:
-                # bn_layer = self.bn_layers[i]
-            #    x = F.relu(layer(x))
+            # if i == 0:
+            #     x = F.relu(bn_layer(layer(x)))
+            # else:
+            #     x = F.relu(layer(x))
         return self.output_activation(self.reconstruction(x))
 
 

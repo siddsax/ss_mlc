@@ -64,7 +64,7 @@ if __name__ == "__main__":
     print(params.alpha)
     params.epochs = 2510
     params.step = 0
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [600, 600, 300]], params)
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [400, 300]], params)
     if params.cuda:
         model = model.cuda()
     # , sampler=sampler) #,beta=beta)
