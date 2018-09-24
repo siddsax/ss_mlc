@@ -1,4 +1,5 @@
 *.lprof
+*logs
 *.swp
 saved_models/
 datasets

@@ -59,12 +59,12 @@ class Encoder(nn.Module):
         self.sample = sample_layer(h_dim[-1], z_dim)
 
     def forward(self, x):
-        #x = self.bn_cat(x)
-        #x = self.drp_5(x)
+        # x = self.bn_cat(x)
+        # x = self.drp_5(x)
         for i, (layer, bn_layer) in enumerate(zip(self.hidden, self.bn_layers)):
             x = F.relu(layer(x))
             #x = F.relu(self.drp_5(layer(x)))
-	    #if i < len(self.hidden) - 2:
+	        #if i < len(self.hidden) - 2:
             #   x = F.relu(self.drp_5(bn_layer(layer(x))))
             #else:
             #    x = F.relu(self.drp_5(layer(x)))
@@ -97,16 +97,16 @@ class Decoder(nn.Module):
         self.drp_5 = nn.Dropout(.5)
 
     def forward(self, x):
-        #x = self.bn_cat(x)
-        #x = self.drp_5(x)
-	#for layer in self.hidden:
+        # x = self.bn_cat(x)
+        x = self.drp_5(x)
+    	#for layer in self.hidden:
         for i, (layer, bn_layer) in enumerate(zip(self.hidden, self.bn_layers)):
-	    #if i == -1:
+            x = F.relu(layer(x))
+	        #if i == -1:
             #    x = F.relu(bn_layer(layer(x)))
             #else:
                 # bn_layer = self.bn_layers[i]
             #    x = F.relu(layer(x))
-	    x = F.relu(layer(x))
         return self.output_activation(self.reconstruction(x))
 
 
