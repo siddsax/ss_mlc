@@ -21,7 +21,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
   m = len(params.unlabelled)
   # m = len(params.labelled)
   for (u, _), (x, y) in params.allData:
-  #for (x,y) in params.unlabelled:
+  # for (x,y) in params.unlabelled:
       iterator += 1.0
       # np.exp(-params.step*3e-4)
       params.reconFact = torch.autograd.Variable(torch.from_numpy(np.array(1 - np.exp(-params.step*params.factor*1e-5)))).float()
@@ -66,8 +66,10 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
           float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
         )
         print(toPrint)
-	model.fit_thresholds(x.data.cpu().numpy(), preds.data.cpu().numpy(), y.data.cpu().numpy())
-        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        model.fit_thresholds(x.data.cpu().numpy(), preds.data.cpu().numpy(), y.data.cpu().numpy())
+        ############## NOT USING ALL DATA ###############################################################
+        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile)#, testBatch=np.inf)
+        #################################################################################################
       mseLoss = mseLoss / params.alpha
 
   P = 100*precision_k(y.data.cpu().numpy().squeeze(),preds.data.cpu().numpy().squeeze(), 5)
@@ -118,7 +120,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
   P = 100*precision_k(ygt, ypred,5)
   if P[0] > params.bestP:
     params.bestP = P[0]
-  # save_model(model, optimizer, params.epoch, params, "/model_best_test_" + params.mn + "_" + str(params.ss))
+    save_model(model, optimizer, params.epoch, params, "/model_best_test_" + params.mn + "_" + str(params.ss))
   # if mseLoss / m < params.best:
   #   params.best = mseLoss / m
   

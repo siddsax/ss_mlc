@@ -76,43 +76,17 @@ if __name__ == "__main__":
     if(params.lm):
         print("================= Loading Model ============================")
         model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
-        # model, optimizer, init = load_model(model, 'saved_models/model_best_test_1', optimizer)
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, viz=viz)
-        if epoch % 1 == 0:
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-            losses += lossesT
-            losses_names += losses_namesT
+        # if epoch % 1 == 0:
+        #     lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        #     losses += lossesT
+        #     losses_names += losses_namesT
 
-        lossDict = {}
-        for key, val in zip(losses_names, losses):
-            lossDict[key] = val
-        viz.plot_current_losses(epoch, lossDict)
-        print("="*100)
-
-# 54.81946468 | 55.79
-# | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE
-# | 56.01255894 Temp 1 BCE
-# 54.22291756 | 56.23233914 Temp 1 BCE ST-gumbel-mc
-# 54.78807092 | 56.51491284 Temp 1 BCE ST-gumbel-mc
-# 56.01255894 | 56.86028004 Temp 1 BCE ST-gumbel-mc Dropout
-
-#mediamill sleec 1%
-#0.5483
-#0.5214
-#0.4637
-#0.4088
-#0.3725
-
-# 0.8140
-# 0.7464
-# 0.6376
-# 0.5596
-#0.4995
-
-
-#DL
-#80.83475232 ------- 1%
-#84.12575722 ------- full
+        # lossDict = {}
+        # for key, val in zip(losses_names, losses):
+        #     lossDict[key] = val
+        # viz.plot_current_losses(epoch, lossDict)
+        # print("="*100)

@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 from utils import *
 from scipy import sparse
 class CombineDataset(data.Dataset):
-    def __init__(self, dataLrg, dataSml): 
+    def __init__(self, dataLrg, dataSml):
         self.data1 = dataLrg#call first instance
         self.data2 = dataSml#call second instance
         self.size1 = len(dataLrg)
@@ -24,7 +24,6 @@ class CombineDataset(data.Dataset):
         return self.data1[index], self.data2[index%self.size2]
 
 def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
-    
 
     flatten_bernoulli = lambda x: transforms.ToTensor()(x).view(-1).bernoulli()
     mnist_train = MNIST(location, train=True, download=True,
@@ -108,8 +107,8 @@ def get_dataset(params):
         params.labelled, params.unlabelled, params.validation, params.allData =  get_mnist(params)
         params.n_labels = 10
         params.xdim = 784
-    elif params.data_set=="amzn":
-	print("TYPE 2")
+    elif params.data_set=="amzn" or params.data_set=="rcv":
+        print("TYPE 2")
         print("Loading dataset " + params.data_set)
         print("="*50)
         args = {'batch_size': params.mb,
@@ -125,8 +124,8 @@ def get_dataset(params):
 
     else:# params.data_set=="delicious" or params.data_set == "bibtex":
         print("TYPE 3")
-	print("Loading dataset " + params.data_set)
-	print("="*50)
+        print("Loading dataset " + params.data_set)
+        print("="*50)
         args = {'batch_size': params.mb,
             'shuffle': True,
             'num_workers': 2}

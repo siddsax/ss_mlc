@@ -32,7 +32,7 @@ class Classifier(nn.Module):
             self.logitsN = nn.Linear(h_dim, y_dim)
         self.bn = nn.BatchNorm1d(h_dim)
     def forward(self, x):
-        #x = self.drp_5(x)
+        # x = self.drp_5(x)
         x = self.dense(x)
         x = F.relu(x)
 
@@ -41,7 +41,7 @@ class Classifier(nn.Module):
         x = F.relu(x)
         #------------------------------------------------------
         if self.type:
-            kk = 0 
+            kk = 0
             x = F.sigmoid(self.logits(x))
             x1 = x.view(x.shape[0], x.shape[1], 1)
             logits = torch.cat((x1, 1 - x1), dim=-1)
