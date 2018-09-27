@@ -60,7 +60,8 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
       mseLoss = classication_loss.data.cpu().numpy()
       params.step += 1
 
-      if(iterator % int(max(m/6, 5))==0):
+      if(iterator % int(max(m/6, 3))==0):
+      # if(iterator>40 and iterator%2 == 0):#
       # if((iterator % 12)==0):
         toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(
           float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
