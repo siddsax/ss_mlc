@@ -3,7 +3,7 @@ from itertools import repeat
 import torch
 from torch import nn
 import torch.nn.functional as F
-
+import numpy as np
 from utils import log_sum_exp, enumerate_discrete
 from .distributions import log_standard_categorical
 from layers import *
@@ -55,7 +55,7 @@ class SVI(nn.Module):
     Stochastic variational inference (SVI).
     """
     base_sampler = ImportanceWeightedSampler(mc=1, iw=1)
-    def __init__(self, model, likelihood=F.binary_cross_entropy, beta=repeat(1), sampler=base_sampler):
+    def __init__(self, model, params, likelihood=F.binary_cross_entropy, beta=repeat(1), sampler=base_sampler):
         """
         Initialises a new SVI optimizer for semi-
         supervised learning.
@@ -69,15 +69,18 @@ class SVI(nn.Module):
         self.likelihood = likelihood
         self.sampler = sampler
         self.beta = beta
+        self.params = params
 
     def forward(self, x, y=None, temp=None, normal=0):
         is_labelled = False if y is None else True
 
+        if not is_labelled:
+            x = x.repeat(5, 1)
         # Prepare for sampling
         xs, ys = (x, y)
 
         # Enumerate choices of label
-        logits = self.model.classify(x)
+        logits, preds = self.model.classify(x)
         if not is_labelled:
             if normal:
                 ys = enumerate_discrete(xs, self.model.y_dim)
@@ -86,33 +89,31 @@ class SVI(nn.Module):
                 if temp is None:
                     print("Error, temperature not given: Exiting")
                     exit()
+                # ys = gumbel_softmax(preds, temp)
                 ys = gumbel_multiSample(logits, temp)
-                # ys = gumbel_softmax(logits, temp)
-                # ys_sp = ys.data.cpu().numpy()[0]
-                # import numpy as np
-                # np.savetxt("foo.csv", ys_sp, delimiter=",")
 
         reconstruction = self.model(xs, ys)
 
         # p(x|y,z)
-        likelihood = -self.likelihood(reconstruction, xs)
-
+        # likelihood = -self.likelihood(reconstruction, xs)
+        diff = reconstruction - xs
+        likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
         # p(y)
         prior = -log_standard_categorical(ys)
 
-        # Equivalent to -L(x, y)
-        L = likelihood + prior - next(self.beta) * self.model.kl_divergence
-
+        # L = (1 - self.params.reconFact) * likelihood - next(self.beta) * self.model.kl_divergence + prior
+        L = likelihood + prior- self.params.reconFact * self.model.kl_divergence
         if is_labelled:
-            return torch.mean(L)
+            return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
 
         if normal:
             L = L.view_as(logits.t()).t()
             L = torch.sum(torch.mul(logits, L), dim=-1)
 
         # Calculate entropy H(q(y|x)) and sum over all labels
-        H = -torch.sum(torch.mul(logits, torch.log(logits + 1e-8)), dim=-1)
+        # H = -torch.sum(torch.mul(preds, torch.log(preds + 1e-8)), dim=-1)
+        H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
 
-        # Equivalent to -U(x)
-        U = L + H
-        return torch.mean(U)
+        # Carefully written
+        U = - L #+ self.params.reconFact *H
+        return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
