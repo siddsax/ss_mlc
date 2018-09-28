@@ -74,6 +74,7 @@ class Dataset(data.Dataset):
             self.x = self.x/self.x.max()
 	    print("----")
 	    self.y = np.load('datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
+        self.maxX = self.x.max()
 	print(self.x.shape)
 	print(self.y.shape)
         print("=== INIT ==== " + dtype)
@@ -120,9 +121,9 @@ def get_dataset(params):
         params.xdim = params.labelled.getDims()
         params.labelled = data.DataLoader(params.labelled, **args)
         params.unlabelled = data.DataLoader(Dataset(params, "tr", 1), **args)
+        params.maxX = Dataset(params, "tr", 1).maxX
         params.validation = data.DataLoader(Dataset(params, "te", 1), **args)
         params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 1), Dataset(params, "subs", 1)), **args)
-
     else:# params.data_set=="delicious" or params.data_set == "bibtex":
         print("TYPE 3")
         print("Loading dataset " + params.data_set)
@@ -138,6 +139,7 @@ def get_dataset(params):
         params.unlabelled = data.DataLoader(Dataset(params, "tr", 0, scaler), **args)
         params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
         params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 0), Dataset(params, "subs", 0)), **args)
+        params.maxX = Dataset(params, "tr", 0).maxX
 
     return params
 

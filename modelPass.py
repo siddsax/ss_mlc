@@ -83,10 +83,8 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
   model.eval()
   mseLoss, total_loss, labelled_loss, unlabelled_loss, kl, recon, Lpred, Lgt, reconU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   m = len(params.validation)
-  ypred = []
-  ygt = []
-  XAll = []
-  dataPts = 0
+  dataPts, XAll, ygt, ypred = 0, [], [], []
+
   for x, y in params.validation:
       x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
       dataPts +=x.shape[0]
@@ -99,7 +97,6 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
       L, klA, reconA, prior = elbo(x, y=y)
       logits, preds = model.classify(x)
 
-      # classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
       classication_loss = torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
       J_alpha = L + params.alpha * classication_loss + U
 
@@ -122,21 +119,19 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
   if P[0] > params.bestP:
     params.bestP = P[0]
     save_model(model, optimizer, params.epoch, params, "/model_best_test_" + params.mn + "_" + str(params.ss))
-  # if mseLoss / m < params.best:
-  #   params.best = mseLoss / m
   
   # toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}, best_bce {:.2f}".format(
   #       float(params.temp), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP, params.best)
   toPrint = 'recon {:.2f}, reconU {:.2f} lblLossPred {:.2f}, lblLossGT {:.2f}'.format(float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
   toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
   print("-"*20)
-  # Test the model
-  preds = model.predict_threshold(XAll, ypred)
 
-  f1_macro = f1_measure(ygt, preds, average='macro')
-  f1_micro = f1_measure(ygt, preds, average='micro')
+  if params.epoch:
+    preds = model.predict_threshold(XAll, ypred)
+    f1_macro = f1_measure(ygt, preds, average='macro')
+    f1_micro = f1_measure(ygt, preds, average='micro')
+    toPrint += "f1_macro {:.2f} f1_micro {:.2f}".format(100*f1_macro, 100*f1_micro)
 
-  toPrint += "f1_macro {:.2f} f1_micro {:.2f}".format(100*f1_macro, 100*f1_micro)
   logFile.write(toPrint + '\n')
   logFile.flush()
   print(toPrint)

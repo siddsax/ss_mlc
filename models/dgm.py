@@ -74,7 +74,7 @@ class DeepGenerativeModel(VariationalAutoencoder):
         """
         [x_dim, self.y_dim, z_dim, h_dim] = dims
         super(DeepGenerativeModel, self).__init__([x_dim, z_dim, h_dim])
-
+        self.z_dim = z_dim
         self.encoder = Encoder([x_dim + self.y_dim, h_dim, z_dim])
         self.decoder = Decoder([z_dim + self.y_dim, list(reversed(h_dim)), x_dim])
         self.classifier = Classifier([x_dim, 600, self.y_dim], params.type)
@@ -100,6 +100,13 @@ class DeepGenerativeModel(VariationalAutoencoder):
         logits = self.classifier(x)
         return logits
 
+    def generate(self, cY):
+
+        epsilon = torch.autograd.Variable(torch.randn((cY.shape[0], self.z_dim)), requires_grad=False).float()
+        if cY.is_cuda:
+            epsilon = epsilon.cuda()
+        x_mu = self.decoder(torch.cat([epsilon, cY.float()], dim=1))
+        return x_mu
     def _construct_thresholds(self, probs, targets, top_k=None):
 
         nb_samples, nb_labels = targets.shape
