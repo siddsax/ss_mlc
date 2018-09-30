@@ -56,7 +56,7 @@ if __name__ == "__main__":
     
     params.temp = 1.0
     params.reconFact = 1.0
-    params.best = 1e10
+    params.bestR = 1e10
     params.bestP = 0.0
     params.epoch = 0
     params.step = 0
@@ -69,10 +69,12 @@ if __name__ == "__main__":
         model.parameters(), lr=lr, betas=(0.9, 0.999))
     elbo = SVI(model, params, likelihood=binary_cross_entropy)
 
-    if(params.lm):
-        print("================= Loading Model ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
-
+    if(params.lm==1):
+        print("================= Loading Model 1 ============================")
+        model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
+    elif(params.lm==2):
+        print("================= Loading Model 2 ============================")
+        model, optimizer, init = load_model(model, 'saved_models/model_best_regen_' + params.mn + "_" + str(params.ss), optimizer)
     modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000)
 
     y_tr = np.load('datasets/'+ params.data_set + '/y_tr.npy')
