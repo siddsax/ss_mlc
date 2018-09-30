@@ -32,15 +32,16 @@ params.add_argument('--mn', dest='mn', type=str, default="", help='name')
 params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or not from the above name')
 params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
-params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
+params.add_argument('--f', dest='factor', type=float, default=.1, help='mnist; delicious;')
 params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
+params.add_argument('--lr', dest='lr', type=float, default=3e-4, help='mnist; delicious;')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
 
 if __name__ == "__main__":
-    lr = 1e-3
+    lr = params.lr
     viz = Visualizer(params)
     if not os.path.exists('logs'):
     	os.makedirs('logs')
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     print(params.alpha)
     params.epochs = 2510
     params.step = 0
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [400, 300]], params)
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
     if params.cuda:
         model = model.cuda()
     # , sampler=sampler) #,beta=beta)

@@ -62,7 +62,7 @@ if __name__ == "__main__":
     params.step = 0
     params = get_dataset(params)
     params.alpha = params.alpha#1 * len(params.unlabelled) / len(params.labelled)
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [400, 300]], params)
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
     if params.cuda:
         model = model.cuda()
     optimizer = torch.optim.Adam(
