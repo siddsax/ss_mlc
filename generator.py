@@ -77,18 +77,40 @@ if __name__ == "__main__":
 
     y_tr = np.load('datasets/'+ params.data_set + '/y_tr.npy')
 # - ------ legacy sampling ----------------------------------------------
-    new_y = np.zeros(np.shape(y_tr))
-    x = np.sum(y_tr, axis=1)
-    label_counts = np.sum(y_tr, axis=0)
-    lives = label_counts.max() - label_counts
-    for i in range(np.shape(y_tr)[0]):
-        labels = np.argwhere(lives>0)[:,0].astype(int)
-        print("{}/{}".format(i, np.shape(y_tr)[0]))
-        
-        fin_labels = np.random.choice(labels, int(x[i]), replace=False, p=lives[labels]/lives.sum())
-        new_y[i, fin_labels] = 1
-        label_countsNew = np.sum(new_y, axis=0) + label_counts
-        lives = label_countsNew.max() - label_countsNew
+    if len(params.cY)==0:
+        new_y = np.zeros(np.shape(y_tr))
+        x = np.sum(y_tr, axis=1)
+        label_counts = np.sum(y_tr, axis=0)
+        lives = label_counts.max() - label_counts
+        for i in range(np.shape(y_tr)[0]):
+            labels = np.argwhere(lives>0)[:,0].astype(int)
+            print("{}/{}".format(i, np.shape(y_tr)[0]))
+            
+            fin_labels = np.random.choice(labels, int(x[i]), replace=False, p=lives[labels]/lives.sum())
+            new_y[i, fin_labels] = 1
+            label_countsNew = np.sum(new_y, axis=0) + label_counts
+            lives = label_countsNew.max() - label_countsNew
+
+        params.cY = new_y#np.random.rand(100,params.n_labels)
+        np.save('datasets/'+ params.data_set + '/y_only_new.npy', params.cY)
+    else:
+        params.cY = np.load(params.cY)
+    customY = torch.autograd.Variable(torch.from_numpy(params.cY))
+    newY = np.concatenate((y_tr, params.cY), axis=0)
+    np.save('datasets/'+ params.data_set + '/y_new.npy', newY)
+    if torch.cuda.is_available():
+        customY = customY.cuda()
+    reconstruction = model.generate(customY)*float(params.maxX)
+    reconstruction = reconstruction.data.cpu().numpy()
+   
+    
+    Xtr = np.load('datasets/'+ params.data_set + '/x_tr.npy')
+    newX = np.concatenate((Xtr, reconstruction), axis=0)
+    randX = np.concatenate((Xtr, np.random.rand(reconstruction.shape[0], reconstruction.shape[1])), axis=0)
+    
+    np.save('datasets/'+ params.data_set + '/x_new.npy', newX)
+    np.save('datasets/'+ params.data_set + '/x_rand.npy', randX)
+
 # ---------------------------------------------------------------------
 
 # ---------- Cluster Sampling ---------------------------------------
@@ -140,30 +162,3 @@ if __name__ == "__main__":
     #         data+=1
     #         print(data)
 # ---------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-    params.cY = new_y#np.random.rand(100,params.n_labels)
-    # params.cY = np.load(params.cY)
-    customY = torch.autograd.Variable(torch.from_numpy(params.cY))
-    if torch.cuda.is_available():
-        customY = customY.cuda()
-    reconstruction = model.generate(customY)*float(params.maxX)
-    reconstruction = reconstruction.data.cpu().numpy()
-    # import pdb
-    # pdb.set_trace()
-    Xtr = np.load('datasets/'+ params.data_set + '/x_tr.npy')
-    newX = np.concatenate((Xtr, reconstruction), axis=0)
-    randX = np.concatenate((Xtr, np.random.rand(reconstruction.shape[0], reconstruction.shape[1])), axis=0)
-    newY = np.concatenate((y_tr, params.cY), axis=0)
-    
-    np.save('datasets/'+ params.data_set + '/x_new.npy', newX)
-    np.save('datasets/'+ params.data_set + '/y_new.npy', newY)
-    np.save('datasets/'+ params.data_set + '/x_rand.npy', randX)

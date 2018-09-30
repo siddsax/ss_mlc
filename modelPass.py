@@ -20,6 +20,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
   iterator = 0
   m = len(params.unlabelled)
   # m = len(params.labelled)
+  reconAl = 0.0
   for (u, _), (x, y) in params.allData:
   # for (x,y) in params.unlabelled:
       iterator += 1.0
@@ -46,6 +47,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
         if params.cuda:
           u = u.cuda(device=0)
         U, klU, reconU, H, priorU = elbo(u, temp=params.temp, normal=params.normal)
+        # klU, reconU, H, priorU  = 0.0, 0.0, 0.0, 0.0
         J_alpha = L + classication_loss + U
       else:
         kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -64,15 +66,16 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
       # if(iterator>40 and iterator%2 == 0):#
       # if((iterator % 12)==0):
         toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(
-          float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
+          float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(reconAl/m), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
         )
         print(toPrint)
+      	reconAl = 0.0
         model.fit_thresholds(x.data.cpu().numpy(), preds.data.cpu().numpy(), y.data.cpu().numpy())
         ############## NOT USING ALL DATA ###############################################################
         lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile)#, testBatch=np.inf)
         #################################################################################################
       mseLoss = mseLoss / params.alpha
-
+      reconAl += recon
   P = 100*precision_k(y.data.cpu().numpy().squeeze(),preds.data.cpu().numpy().squeeze(), 5)
   if params.ss:
     return [P[0], mseLoss, 100*params.temp, recon], ['Prec_1', 'BCELoss', 'Temperaturex100', 'lblLossTrain']
@@ -116,13 +119,16 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
 
   ygt, ypred, XAll = np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0), np.concatenate(XAll, axis=0)
   P = 100*precision_k(ygt, ypred,5)
-  if P[0] > params.bestP:
-    params.bestP = P[0]
-    save_model(model, optimizer, params.epoch, params, "/model_best_test_" + params.mn + "_" + str(params.ss))
-  
-  # toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}, best_bce {:.2f}".format(
-  #       float(params.temp), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP, params.best)
-  toPrint = 'recon {:.2f}, reconU {:.2f} lblLossPred {:.2f}, lblLossGT {:.2f}'.format(float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
+  if params.epoch:
+    if P[0] > params.bestP:
+      params.bestP = P[0]
+      save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
+
+    if float(recon/m) < params.bestR:
+      params.bestR = float(recon/m)
+      save_model(model, optimizer, params.epoch, params, "/model_best_regen_" + params.mn + "_" + str(params.ss))
+
+  toPrint = 'recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f}'.format(float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
   toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
   print("-"*20)
 

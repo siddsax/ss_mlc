@@ -55,12 +55,12 @@ if __name__ == "__main__":
     logFile.write('\n\n=============== VAE File ===================\n\n')
     logFile.write(open('models/vae.py').read())
     
-    params.best = 1e10
     params.temp = 1.0
     params.reconFact = 1.0
     params.n_labels = 10
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
+    params.bestR = 1e10
     params = get_dataset(params)
     print(params.alpha)
     params.epochs = 2510
@@ -74,9 +74,12 @@ if __name__ == "__main__":
         model.parameters(), lr=lr, betas=(0.9, 0.999))
     init = 0
 
-    if(params.lm):
-        print("================= Loading Model ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
+    if(params.lm==1):
+        print("================= Loading Model 1 ============================")
+        model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
+    elif(params.lm==2):
+        print("================= Loading Model 2 ============================")
+        model, optimizer, init = load_model(model, 'saved_models/model_best_regen_' + params.mn + "_" + str(params.ss), optimizer)
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
@@ -90,4 +93,4 @@ if __name__ == "__main__":
         # for key, val in zip(losses_names, losses):
         #     lossDict[key] = val
         # viz.plot_current_losses(epoch, lossDict)
-        # print("="*100)
+        print("="*100)
