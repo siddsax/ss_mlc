@@ -62,7 +62,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
       mseLoss = classication_loss.data.cpu().numpy()
       params.step += 1
 
-      if(iterator % int(max(m/6, 3))==0):
+      if(iterator % int(max(m, 3))==0):
       # if(iterator>40 and iterator%2 == 0):#
       # if((iterator % 12)==0):
         toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(
@@ -87,7 +87,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
   mseLoss, total_loss, labelled_loss, unlabelled_loss, kl, recon, Lpred, Lgt, reconU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   m = len(params.validation)
   dataPts, XAll, ygt, ypred = 0, [], [], []
-
+  recon2 = 0.0
   for x, y in params.validation:
       x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
       dataPts +=x.shape[0]
@@ -117,6 +117,10 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
       Lpred += lp.data.cpu().numpy()
       Lgt += L.data.cpu().numpy()
 
+      reconstruction = model.generate(y)
+      diff = reconstruction - x
+      recon2 += torch.sum(torch.mul(diff, diff), dim=-1).data.cpu().numpy().mean()
+
   ygt, ypred, XAll = np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0), np.concatenate(XAll, axis=0)
   P = 100*precision_k(ygt, ypred,5)
   if params.epoch:
@@ -124,11 +128,11 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
       params.bestP = P[0]
       save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
 
-    if float(recon/m) < params.bestR:
-      params.bestR = float(recon/m)
+    if float(recon2/m) < params.bestR:
+      params.bestR = float(recon2/m)
       save_model(model, optimizer, params.epoch, params, "/model_best_regen_" + params.mn + "_" + str(params.ss))
 
-  toPrint = 'recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f}'.format(float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
+  toPrint = 'recon2 {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} best recon2 {:.6f}'.format(float(recon2/m), float(recon/m), float(reconU/m), Lpred / m, Lgt/m, float(params.bestP))
   toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
   print("-"*20)
 
