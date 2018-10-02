@@ -16,6 +16,7 @@ from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
 from modelPass import modelTrPass, modelTePass
 import argparse
 import os
+import cPickle
 from visualizer import Visualizer
 
 
@@ -33,6 +34,7 @@ params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delic
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--cY', dest='cY', type=str, default="", help='custom labels')
+params.add_argument('--numC', dest='numC', type=int, default=30, help='custom labels')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
@@ -80,18 +82,72 @@ if __name__ == "__main__":
     y_tr = np.load('datasets/'+ params.data_set + '/y_tr.npy')
 # - ------ legacy sampling ----------------------------------------------
     if len(params.cY)==0:
-        new_y = np.zeros(np.shape(y_tr))
-        x = np.sum(y_tr, axis=1)
-        label_counts = np.sum(y_tr, axis=0)
-        lives = label_counts.max() - label_counts
-        for i in range(np.shape(y_tr)[0]):
-            labels = np.argwhere(lives>0)[:,0].astype(int)
-            print("{}/{}".format(i, np.shape(y_tr)[0]))
-            
-            fin_labels = np.random.choice(labels, int(x[i]), replace=False, p=lives[labels]/lives.sum())
-            new_y[i, fin_labels] = 1
-            label_countsNew = np.sum(new_y, axis=0) + label_counts
-            lives = label_countsNew.max() - label_countsNew
+        if False:
+            new_y = np.zeros(np.shape(y_tr))
+            label_counts = np.sum(y_tr, axis=0)
+            lives = label_counts.max() - label_counts
+            x = np.sum(y_tr, axis=1)
+            for i in range(np.shape(y_tr)[0]):
+                labels = np.argwhere(lives>0)[:,0].astype(int)
+                print("{}/{}".format(i, np.shape(y_tr)[0]))
+                
+                fin_labels = np.random.choice(labels, int(x[i]), replace=False, p=lives[labels]/lives.sum())
+                new_y[i, fin_labels] = 1
+                label_countsNew = np.sum(new_y, axis=0) + label_counts
+                lives = label_countsNew.max() - label_countsNew
+        else:
+            new_y = np.zeros(np.shape(y_tr))
+            label_counts = np.sum(y_tr, axis=0)
+            lives = 10*(label_counts - label_counts.max()/15.77)
+            # print(lives)
+            # exit()
+            x = np.sum(y_tr, axis=1).tolist()
+            with open('datasets/' + params.data_set + '/labelling/classifier_' + str(params.numC)  + '.pkl', 'rb') as fid:
+                kmeans = cPickle.load(fid)
+            adjacency_mat = np.load('datasets/' + params.data_set + '/labelling/adjacency_mat.npy')
+            clusters = kmeans.predict(adjacency_mat)
+            num_clusters = int(np.max(clusters))
+            lives[np.argwhere(lives>0)] = 0
+            clusters[np.argwhere(lives==0)] = num_clusters + 1 
+            data_pts_num = []
+            data_pts = []
+            for i in range(int(num_clusters)):
+                data_pts.append(np.argwhere(clusters==i))           
+                data_pts_num.append(len(data_pts[i]))
+
+
+            data = 0
+            priority_list = []
+            stuck_count = 0
+            while(np.sum(lives) < 0 and data < y_tr.shape[0]):
+                if(len(priority_list)):
+                    clst_num = priority_list[0]
+                    priority_list.remove(clst_num)
+                else:    
+                    clst_num = np.random.randint(0, high=num_clusters)
+                num_labels = np.random.choice(x)
+                if(num_labels>data_pts_num[clst_num]):
+                    if(stuck_count>10):
+                        stuck_count = 0
+                    else:
+                        stuck_count+=1
+                        priority_list.append(clst_num)
+                        print(" ---- stuck ---- at {1} for {0} ----".format(num_labels, clst_num))
+                        continue
+                else:
+                    x = np.delete(x, np.argwhere(x==num_labels)[0])
+                    fin_labels = np.random.choice(data_pts[clst_num][:,0], int(num_labels), replace=False)
+                    lives[fin_labels] += 1
+                    clusters[np.argwhere(lives==0)] = num_clusters + 1
+                    data_pts_num = []
+                    data_pts = []
+                    for i in range(num_clusters):
+                        data_pts.append(np.argwhere(clusters==i))           
+                        data_pts_num.append(len(data_pts[i]))
+
+                    new_y[data, fin_labels] = 1
+                    data+=1
+                    print(data)
 
         params.cY = new_y#np.random.rand(100,params.n_labels)
         np.save('datasets/'+ params.data_set + '/y_only_new.npy', params.cY)
@@ -116,51 +172,4 @@ if __name__ == "__main__":
 # ---------------------------------------------------------------------
 
 # ---------- Cluster Sampling ---------------------------------------
-    # new_y = np.zeros(np.shape(y_tr))#[0], np.shape(y_tr)[1])
-    ## clusters = np.load('cluster_assignments_1.npy')[0,:]
-    # num_clusters = int(np.max(clusters))
-
-
-
-    # lives[np.argwhere(lives>0)] = 0
-    # clusters[np.argwhere(lives==0)] = num_clusters + 1 
-    # data_pts_num = []
-    # data_pts = []
-    # for i in range(int(num_clusters)):
-    #     data_pts.append(np.argwhere(clusters==i))           
-    #     data_pts_num.append(len(data_pts[i]))
-
-
-    # data = 0
-    # priority_list = []
-    # stuck_count = 0
-    # while(np.sum(lives) < 0 and data < y_tr.shape[0]):
-    #     if(len(priority_list)):
-    #         clst_num = priority_list[0]
-    #         priority_list.remove(clst_num)
-    #     else:    
-    #         clst_num = np.random.randint(0, high=num_clusters)
-    #     num_labels = np.random.choice(x)
-    #     if(num_labels>data_pts_num[clst_num]):
-    #         if(stuck_count>10):
-    #             stuck_count = 0
-    #         else:
-    #             stuck_count+=1
-    #             priority_list.append(clst_num)
-    #             print(" ---- stuck ---- at {1} for {0} ----".format(num_labels, clst_num))
-    #             continue
-    #     else:
-    #         x = np.delete(x, np.argwhere(x==num_labels)[0])
-    #         fin_labels = np.random.choice(data_pts[clst_num][:,0], int(num_labels), replace=False)
-    #         lives[fin_labels] += 1
-    #         clusters[np.argwhere(lives==0)] = num_clusters + 1
-    #         data_pts_num = []
-    #         data_pts = []
-    #         for i in range(num_clusters):
-    #             data_pts.append(np.argwhere(clusters==i))           
-    #             data_pts_num.append(len(data_pts[i]))
-
-    #         new_y[data, fin_labels] = 1
-    #         data+=1
-    #         print(data)
 # ---------------------------------------------------------------------

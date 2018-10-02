@@ -132,7 +132,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
       params.bestR = float(recon2/m)
       save_model(model, optimizer, params.epoch, params, "/model_best_regen_" + params.mn + "_" + str(params.ss))
 
-  toPrint = 'recon2 {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} best recon2 {:.6f}'.format(float(recon2/m), float(recon/m), float(reconU/m), Lpred / m, Lgt/m, float(params.bestP))
+  toPrint = 'recon2 {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} best recon2 {:.6f}'.format(float(recon2/m), float(recon/m), float(reconU/m), Lpred / m, Lgt/m, float(params.bestR))
   toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
   print("-"*20)
 
