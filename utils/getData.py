@@ -131,15 +131,17 @@ def get_dataset(params):
         args = {'batch_size': params.mb,
             'shuffle': True,
             'num_workers': 2}
-        params.labelled = Dataset(params, "subs", 0)
+        params.labelled = Dataset(params, "new", 0) if params.new else Dataset(params, "subs", 0)
+        scaler = params.labelled.getScaler()
+        params.unlabelled =  Dataset(params, "new", 0) if  params.new else Dataset(params, "tr", 0, scaler)
+        params.allData = data.DataLoader(CombineDataset(params.unlabelled, params.labelled), **args)
+
         params.n_labels = params.labelled.getClasses()
         params.xdim = params.labelled.getDims()
-        scaler = params.labelled.getScaler()
-        params.labelled = data.DataLoader(params.labelled, **args)
-        params.unlabelled = data.DataLoader(Dataset(params, "tr", 0, scaler), **args)
-        params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
-        params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 0), Dataset(params, "subs", 0)), **args)
-        params.maxX = Dataset(params, "tr", 0).maxX
+        params.maxX = params.unlabelled.maxX
 
+        params.unlabelled = data.DataLoader(params.unlabelled, **args)
+        params.labelled = data.DataLoader(params.labelled, **args)
+        params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
     return params
 
