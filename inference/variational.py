@@ -7,6 +7,8 @@ import numpy as np
 from utils import log_sum_exp, enumerate_discrete
 from .distributions import log_standard_categorical
 from layers import *
+from precision_k import *
+
 class ImportanceWeightedSampler(object):
     """
     Importance weighted sampler [Burda 2015] to
@@ -71,49 +73,16 @@ class SVI(nn.Module):
         self.beta = beta
         self.params = params
 
-    def forward(self, x, y=None, temp=None, normal=0):
-        is_labelled = False if y is None else True
-
-        if not is_labelled:
-            x = x.repeat(5, 1)
-        # Prepare for sampling
-        xs, ys = (x, y)
-
-        # Enumerate choices of label
-        logits, preds = self.model.classify(x)
-        if not is_labelled:
-            if normal:
-                ys = enumerate_discrete(xs, self.model.y_dim)
-                xs = xs.repeat(self.model.y_dim, 1)
-            else:
-                if temp is None:
-                    print("Error, temperature not given: Exiting")
-                    exit()
-                # ys = gumbel_softmax(preds, temp)
-                ys = gumbel_multiSample(logits, temp)
-
+    def forward(self, xs, ys=None, temp=None, normal=0):
         reconstruction = self.model(xs, ys)
-
-        # p(x|y,z)
-        # likelihood = -self.likelihood(reconstruction, xs)
-        diff = reconstruction - xs
-        likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
-        # p(y)
+        # diff = reconstruction - xs
+        # likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
+        # likelihood = - torch.sum(torch.abs(diff), dim=-1)
+        likelihood = - torch.nn.functional.binary_cross_entropy(reconstruction, xs)*xs.shape[-1]
         prior = -log_standard_categorical(ys)
-
-        # L = (1 - self.params.reconFact) * likelihood - next(self.beta) * self.model.kl_divergence + prior
+        
+        xs = xs.data.cpu().numpy()
+        reconstruction = reconstruction.data.cpu().numpy()
+        P = precision_k(xs.astype(int), reconstruction,int(np.sum(xs, axis=1).mean()))
         L = likelihood + prior - self.params.reconFact * self.model.kl_divergence
-        if is_labelled:
-            return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
-
-        if normal:
-            L = L.view_as(logits.t()).t()
-            L = torch.sum(torch.mul(logits, L), dim=-1)
-
-        # Calculate entropy H(q(y|x)) and sum over all labels
-        # H = -torch.sum(torch.mul(preds, torch.log(preds + 1e-8)), dim=-1)
-        H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
-
-        # Carefully written
-        U = - L #+ self.params.reconFact *H
-        return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
+        return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy()), P

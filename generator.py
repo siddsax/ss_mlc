@@ -21,7 +21,6 @@ from visualizer import Visualizer
 
 
 params = argparse.ArgumentParser(description='Process some integers.')
-params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--oss', dest='oss', type=int, default=0, help='1 to ONLY do semi-super')
 params.add_argument('--ld', dest='ld', type=int, default=0, help='1 to load model')
 params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
@@ -49,7 +48,6 @@ if __name__ == "__main__":
     print("=================== Name of logFile is =======    " + logFile + "     ==========")
     logFile = open('logs/' + logFile + '.logs', 'w+')
     dgm = open('models/dgm.py').read()
-    logFile.write(" WE are running on " + str(params.ss) + "    ====\n")
     logFile.write(" WE are having LR " + str(lr) + "    ====\n")    
     logFile.write('=============== DGM File ===================\n\n')
     logFile.write(dgm)
@@ -73,10 +71,17 @@ if __name__ == "__main__":
 
     if(params.lm==1):
         print("================= Loading Model 1 ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
+        model, optimizer, init = load_model(model, 'saved_models/model_best_1_' + params.mn, optimizer)
     elif(params.lm==2):
         print("================= Loading Model 2 ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_regen_' + params.mn + "_" + str(params.ss), optimizer)
+        model, optimizer, init = load_model(model, 'saved_models/model_best_2_' + params.mn, optimizer)
+    elif(params.lm==3):
+        print("================= Loading Model 3 ============================")
+        model, optimizer, init = load_model(model, 'saved_models/model_best_3_' + params.mn, optimizer)
+    elif(params.lm==4):
+        print("================= Loading Model 4 ============================")
+        model, optimizer, init = load_model(model, 'saved_models/model_best_4_' + params.mn, optimizer)
+
     modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000)
 
     y_tr = np.load('datasets/'+ params.data_set + '/y_tr.npy')
@@ -90,7 +95,6 @@ if __name__ == "__main__":
             for i in range(np.shape(y_tr)[0]):
                 labels = np.argwhere(lives>0)[:,0].astype(int)
                 print("{}/{}".format(i, np.shape(y_tr)[0]))
-                
                 fin_labels = np.random.choice(labels, int(x[i]), replace=False, p=lives[labels]/lives.sum())
                 new_y[i, fin_labels] = 1
                 label_countsNew = np.sum(new_y, axis=0) + label_counts
@@ -123,7 +127,7 @@ if __name__ == "__main__":
                 if(len(priority_list)):
                     clst_num = priority_list[0]
                     priority_list.remove(clst_num)
-                else:    
+                else:
                     clst_num = np.random.randint(0, high=num_clusters)
                 num_labels = np.random.choice(x)
                 if(num_labels>data_pts_num[clst_num]):
@@ -142,7 +146,7 @@ if __name__ == "__main__":
                     data_pts_num = []
                     data_pts = []
                     for i in range(num_clusters):
-                        data_pts.append(np.argwhere(clusters==i))           
+                        data_pts.append(np.argwhere(clusters==i))
                         data_pts_num.append(len(data_pts[i]))
 
                     new_y[data, fin_labels] = 1
@@ -150,26 +154,27 @@ if __name__ == "__main__":
                     print(data)
 
         params.cY = new_y#np.random.rand(100,params.n_labels)
-        np.save('datasets/'+ params.data_set + '/y_only_new.npy', params.cY)
+        np.save('../temp_2/datasets/'+ params.data_set + '/y_only_new.npy', params.cY)
     else:
         params.cY = np.load(params.cY)
     customY = torch.autograd.Variable(torch.from_numpy(params.cY))
     newY = np.concatenate((y_tr, params.cY), axis=0)
-    np.save('datasets/'+ params.data_set + '/y_new.npy', newY)
+    np.save('../temp_2/datasets/'+ params.data_set + '/y_new.npy', newY)
     if torch.cuda.is_available():
         customY = customY.cuda()
-    reconstruction = model.generate(customY)*float(params.maxX)
+
+    reconstruction = model.generate(customY)
     reconstruction = reconstruction.data.cpu().numpy()
-   
-    
-    Xtr = np.load('datasets/'+ params.data_set + '/x_tr.npy')
+
+
+    Xtr = np.load('../temp_2/datasets/'+ params.data_set + '/x_tr.npy')
     newX = np.concatenate((Xtr, reconstruction), axis=0)
     randX = np.concatenate((Xtr, np.random.rand(reconstruction.shape[0], reconstruction.shape[1])), axis=0)
+
+    np.save('../temp_2/datasets/'+ params.data_set + '/x_new.npy', newX)
+    np.save('../temp_2/datasets/'+ params.data_set + '/x_rand.npy', randX)
+    import scipy
+    scipy.io.savemat('../temp_2/datasets/'+ params.data_set + '/x_new', mdict={'x_new': newX})
+    scipy.io.savemat('../temp_2/datasets/'+ params.data_set + '/y_new', mdict={'y_new': newY})
+    scipy.io.savemat('../temp_2/datasets/'+ params.data_set + '/x_rand', mdict={'x_rand': randX})
     
-    np.save('datasets/'+ params.data_set + '/x_new.npy', newX)
-    np.save('datasets/'+ params.data_set + '/x_rand.npy', randX)
-
-# ---------------------------------------------------------------------
-
-# ---------- Cluster Sampling ---------------------------------------
-# ---------------------------------------------------------------------

@@ -22,7 +22,6 @@ np.random.seed(1337)
 
 
 params = argparse.ArgumentParser(description='Process some integers.')
-params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--oss', dest='oss', type=int, default=0, help='1 to ONLY do semi-super')
 params.add_argument('--ld', dest='ld', type=int, default=0, help='1 to load model')
 params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
@@ -30,7 +29,6 @@ params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mn
 params.add_argument('--zz', dest='name', type=str, default="", help='mnist; delicious;')
 params.add_argument('--mn', dest='mn', type=str, default="", help='name')
 params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or not from the above name')
-params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
@@ -49,7 +47,6 @@ if __name__ == "__main__":
     print("=================== Name of logFile is =======    " + logFile + "     ==========")
     logFile = open('logs/' + logFile + '.logs', 'w+')
     dgm = open('models/dgm.py').read()
-    logFile.write(" WE are running on " + str(params.ss) + "    ====\n")
     logFile.write(" WE are having LR " + str(lr) + "    ====\n")    
     logFile.write('=============== DGM File ===================\n\n')
     logFile.write(dgm)
@@ -60,10 +57,8 @@ if __name__ == "__main__":
     params.reconFact = 1.0
     params.n_labels = 10
     # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
-    params.bestP = 0.0
-    params.bestR = 1e10
+    params.bestRX, params.bestRZ, params.bestPZ, params.bestPX = 1e5, 1e5, 0.0, 0.0
     params = get_dataset(params)
-    print(params.alpha)
     params.epochs = 2510
     params.step = 0
     model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
@@ -75,23 +70,23 @@ if __name__ == "__main__":
         model.parameters(), lr=lr, betas=(0.9, 0.999))
     init = 0
 
-    if(params.lm==1):
-        print("================= Loading Model 1 ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
-    elif(params.lm==2):
-        print("================= Loading Model 2 ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_regen_' + params.mn + "_" + str(params.ss), optimizer)
+    # if(params.lm==1):
+    #     print("================= Loading Model 1 ============================")
+    #     model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
+    # elif(params.lm==2):
+    #     print("================= Loading Model 2 ============================")
+    #     model, optimizer, init = load_model(model, 'saved_models/model_best_regen_' + params.mn + "_" + str(params.ss), optimizer)
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, viz=viz)
         # if epoch % 1 == 0:
-        #     lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-        #     losses += lossesT
-        #     losses_names += losses_namesT
+        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        losses += lossesT
+        losses_names += losses_namesT
 
-        # lossDict = {}
-        # for key, val in zip(losses_names, losses):
-        #     lossDict[key] = val
-        # viz.plot_current_losses(epoch, lossDict)
+        lossDict = {}
+        for key, val in zip(losses_names, losses):
+            lossDict[key] = val
+        viz.plot_current_losses(epoch, lossDict)
         print("="*100)
