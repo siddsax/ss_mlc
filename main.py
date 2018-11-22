@@ -35,6 +35,7 @@ params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delic
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--lr', dest='lr', type=float, default=3e-4, help='mnist; delicious;')
+params.add_argument('--new', dest='new', type=int, default=0, help='mnist; delicious;')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
