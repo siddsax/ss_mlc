@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.nn import init
 import numpy as np
 from .vae import VariationalAutoencoder
-from .vae import Encoder, Decoder, LadderEncoder, LadderDecoder
+from .vae import Encoder, Decoder
 
 def weights_init(m):
     if(torch.__version__=='0.4.0'):
@@ -96,55 +96,9 @@ class DeepGenerativeModel(VariationalAutoencoder):
             epsilon = epsilon.cuda()
         x_mu = self.decoder(torch.cat([epsilon, cY.float()], dim=1))
         return x_mu
-    def _construct_thresholds(self, probs, targets, top_k=None):
-
-        nb_samples, nb_labels = targets.shape
-        top_k = top_k or nb_labels
-
-        # Sort predicted probabilities in descending order
-        idx = np.argsort(probs, axis=1)[:,:-(top_k + 1):-1]
-        p_sorted = np.vstack([probs[i, idx[i]] for i in range(len(idx))])
-        t_sorted = np.vstack([targets[i, idx[i]] for i in range(len(idx))])
-
-        # Compute F-1 measures for every possible threshold position
-        F1 = []
-        TP = np.zeros(nb_samples)
-        FN = t_sorted.sum(axis=1)
-        FP = np.zeros(nb_samples)
-        for i in range(top_k):
-            TP += t_sorted[:,i]
-            FN -= t_sorted[:,i]
-            FP += 1 - t_sorted[:,i]
-            F1.append(2 * TP / (2 * TP + FN + FP))
-        F1 = np.vstack(F1).T
-
-        # Find the thresholds
-        row = np.arange(nb_samples)
-        col = F1.argmax(axis=1)
-        p_sorted = np.hstack([p_sorted, np.zeros(nb_samples)[:, None]])
-        T = 0.5 * (p_sorted[row, col] + p_sorted[row, col + 1])[:, None]
-
-        return T
-
-    def fit_thresholds(self, inputs, probs, Y, alpha=np.logspace(-3, 3, num=10).tolist(), cv=5, top_k=None):
-      
-        T = self._construct_thresholds(probs, Y)
-
-        if isinstance(alpha, list):
-            model = lm.RidgeCV(alphas=alpha, cv=cv).fit(inputs, T)
-            alpha = model.alpha_
-            self.t_models = lm.Ridge(alpha=alpha)
-            self.t_models.fit(inputs, T)
-
-    def predict_threshold(self, X, probs):
- 
-        T = self.t_models.predict(X)
-        preds = probs >= T
-        return preds
 
     def sample(self, z, y):
 
         y = y.float()
         x = self.decoder(torch.cat([z, y], dim=1))
         return x
-

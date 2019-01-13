@@ -21,7 +21,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
     for iterator, ((u, _), (x, y)) in enumerate(params.allData):
 
         # Parameters
-        params.kl_annealling = 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
+        params.kl_annealling = float(1 - np.exp(- params.step*params.factor*1e-5))
         params.temperature = max(.5, 1.0 * np.exp(- params.step*3e-4))
 
         # Data

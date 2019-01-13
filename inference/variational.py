@@ -7,6 +7,8 @@ import numpy as np
 from utils import log_sum_exp, enumerate_discrete
 from .distributions import log_standard_categorical
 from layers import *
+from precision_k import *
+
 class ImportanceWeightedSampler(object):
     """
     Importance weighted sampler [Burda 2015] to
@@ -71,6 +73,7 @@ class SVI(nn.Module):
         self.beta = beta
         self.params = params
 
+<<<<<<< HEAD
     def forward(self, x, y=None, temperature=None, normal=0):
         is_labelled = False if y is None else True
 
@@ -92,14 +95,16 @@ class SVI(nn.Module):
                 # ys = gumbel_softmax(preds, temperature)
                 ys = gumbel_multiSample(logits, temperature)
 
+=======
+    def forward(self, xs, ys=None, temp=None, normal=0):
+>>>>>>> 0e0f8b11941b4b2c406ee350180332515b881019
         reconstruction = self.model(xs, ys)
-
-        # p(x|y,z)
-        # likelihood = -self.likelihood(reconstruction, xs)
-        diff = reconstruction - xs
-        likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
-        # p(y)
+        # diff = reconstruction - xs
+        # likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
+        # likelihood = - torch.sum(torch.abs(diff), dim=-1)
+        likelihood = - torch.nn.functional.binary_cross_entropy(reconstruction, xs)*xs.shape[-1]
         prior = -log_standard_categorical(ys)
+<<<<<<< HEAD
 
         # L = (1 - self.params.kl_annealling) * likelihood - next(self.beta) * self.model.kl_divergence + prior
         L = likelihood + prior - self.params.kl_annealling * self.model.kl_divergence
@@ -119,3 +124,11 @@ class SVI(nn.Module):
 
         self.kl_annealling += 1.0
         return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
+=======
+        
+        xs = xs.data.cpu().numpy()
+        reconstruction = reconstruction.data.cpu().numpy()
+        P = precision_k(xs.astype(int), reconstruction,int(np.sum(xs, axis=1).mean()))
+        L = likelihood + prior - self.params.reconFact * self.model.kl_divergence
+        return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy()), P
+>>>>>>> 0e0f8b11941b4b2c406ee350180332515b881019

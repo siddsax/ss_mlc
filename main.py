@@ -22,7 +22,6 @@ np.random.seed(1337)
 
 
 params = argparse.ArgumentParser(description='Process some integers.')
-params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--oss', dest='oss', type=int, default=0, help='1 to ONLY do semi-super')
 params.add_argument('--ld', dest='ld', type=int, default=0, help='1 to load model')
 params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
@@ -30,7 +29,6 @@ params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mn
 params.add_argument('--zz', dest='name', type=str, default="", help='mnist; delicious;')
 params.add_argument('--mn', dest='mn', type=str, default="", help='name')
 params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or not from the above name')
-params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--t', dest='twoOut', type=float, default=5, help='mnist; delicious;')
@@ -82,10 +80,9 @@ if __name__ == "__main__":
     for epoch in range(init, params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, viz=viz)
-        if epoch % 1 == 0:
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-            losses += lossesT
-            losses_names += losses_namesT
+        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        losses += lossesT
+        losses_names += losses_namesT
 
         # lossDict = {}
         # for key, val in zip(losses_names, losses):

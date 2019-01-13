@@ -23,7 +23,7 @@ class CombineDataset(data.Dataset):
 
     def __getitem__(self,index):
         return self.data1[index], self.data2[index%self.size2]
-scaler
+
 def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
 
     flatten_bernoulli = lambda x: transforms.ToTensor()(x).view(-1).bernoulli()
@@ -91,55 +91,25 @@ class Dataset(data.Dataset):
             return self.scaler
 
     def __getitem__(self, index):
-        # print("*** Getting Item ******")
         x = self.x[index, :]
         y = self.y[index, :]
         if self.sp:
             x = x.todense()
             y = y.todense()
-        X = torch.from_numpy(x.reshape((1, x.shape[-1])))#torch.load('data/' + ID + '.pt')
-        y = torch.from_numpy(y.reshape((1, y.shape[-1])))#self.labels[ID]
+        X = torch.from_numpy(x.reshape((1, x.shape[-1])))
+        y = torch.from_numpy(y.reshape((1, y.shape[-1])))
         return X, y
 
 
 def get_dataset(params):
-    if params.data_set=="mnist":
-        params.labelled, params.unlabelled, params.validation, params.allData =  get_mnist(params)
-        params.n_labels = 10
-        params.xdim = 784
-    elif params.data_set=="amzn" or params.data_set=="rcv":
-        print("TYPE 2")
-        print("Loading dataset " + params.data_set)
-        print("="*50)
-        args = {'batch_size': params.mb,
-            'shuffle': True,
-            'num_workers': 0 }
-        params.labelled = Dataset(params, "subs", 1)
-        params.n_labels = params.labelled.getClasses()
-        params.xdim = params.labelled.getDims()
-        params.labelled = data.DataLoader(params.labelled, **args)
-        params.unlabelled = data.DataLoader(Dataset(params, "tr", 1), **args)
-        params.maxX = Dataset(params, "tr", 1).maxX
-        params.validation = data.DataLoader(Dataset(params, "te", 1), **args)
-        params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 1), Dataset(params, "subs", 1)), **args)
-    else:# params.data_set=="delicious" or params.data_set == "bibtex":
-        print("TYPE 3")
-        print("Loading dataset " + params.data_set)
-        print("="*50)
-        args = {'batch_size': params.mb,
-            'shuffle': True,
-            'num_workers': 2}
-        params.labelled = Dataset(params, "new", 0) if params.new else Dataset(params, "subs", 0)
-        scaler = params.labelled.getScaler()
-        params.unlabelled =  Dataset(params, "new", 0) if  params.new else Dataset(params, "tr", 0, scaler)
-        params.allData = data.DataLoader(CombineDataset(params.unlabelled, params.labelled), **args)
 
-        params.n_labels = params.labelled.getClasses()
-        params.xdim = params.labelled.getDims()
-        params.maxX = params.unlabelled.maxX
-
-        params.unlabelled = data.DataLoader(params.unlabelled, **args)
-        params.labelled = data.DataLoader(params.labelled, **args)
-        params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
+    print("Loading dataset " + params.data_set)
+    print("="*50)
+    args = {'batch_size': params.mb, 'shuffle': True, 'num_workers': 2}
+    params.dataTr = Dataset(params, "subs", 0)
+    params.n_labels = params.dataTr.getClasses()
+    params.xdim = params.dataTr.getDims()
+    params.dataTr = data.DataLoader(params.dataTr, **args)
+    params.dataTe = data.DataLoader(Dataset(params, "te", 0), **args)
     return params
 
