@@ -33,7 +33,7 @@ params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or 
 params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
-params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
+params.add_argument('--t', dest='twoOut', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--lr', dest='lr', type=float, default=3e-4, help='mnist; delicious;')
 params.add_argument('--new', type=int, default=0, help='mnist; delicious;')
 params.add_argument('--epochs', type=int, default=2500, help='num epochs')

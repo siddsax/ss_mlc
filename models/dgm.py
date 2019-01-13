@@ -15,14 +15,14 @@ def weights_init(m):
         torch.nn.init.xavier_uniform(m)
 
 class Classifier(nn.Module):
-    def __init__(self, dims, typ=0):
+    def __init__(self, dims, twoOut):
         """
         Single hidden layer classifier
         with softmax output.
         """
         super(Classifier, self).__init__()
         [x_dim, h_dim, y_dim] = dims
-        self.type = typ
+        self.twoOut = twoOut
         self.drp_5 = nn.Dropout(.5)
         self.dense = nn.Linear(x_dim, int(1.5*h_dim))
         self.dense_2 = nn.Linear(int(1.5*h_dim), h_dim)
@@ -41,13 +41,7 @@ class Classifier(nn.Module):
         x = self.dense_2(x)
         x = F.relu(x)
         #------------------------------------------------------
-        if self.type:
-            x = F.sigmoid(self.logits(x))
-            x1 = x.view(x.shape[0], x.shape[1], 1)
-            logits = torch.cat((x1, 1 - x1), dim=-1)
-            return torch.log(logits+1e-8), x
-        ########################################################
-        else:
+        if self.twoOut:
             predsP = self.logitsP(x)
             predsN = self.logitsN(x)
             predsP = predsP.view(predsP.shape[0], predsP.shape[1], 1)
@@ -55,6 +49,12 @@ class Classifier(nn.Module):
             logits = torch.cat((predsP, predsN), dim=-1)
             preds = F.softmax(logits, dim=-1)[:,:,0]
             return logits, preds
+        ########################################################
+        else:
+            x = F.sigmoid(self.logits(x))
+            x1 = x.view(x.shape[0], x.shape[1], 1)
+            logits = torch.cat((x1, 1 - x1), dim=-1)
+            return torch.log(logits+1e-8), x
         ########################################################
 
 
@@ -67,7 +67,7 @@ class DeepGenerativeModel(VariationalAutoencoder):
 
         self.encoder = Encoder([x_dim + self.y_dim, h_dim, self.z_dim])
         self.decoder = Decoder([self.z_dim + self.y_dim, list(reversed(h_dim)), x_dim])
-        self.classifier = Classifier([x_dim, 600, self.y_dim], params.type)
+        self.classifier = Classifier([x_dim, 600, self.y_dim], params.twoOut)
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
