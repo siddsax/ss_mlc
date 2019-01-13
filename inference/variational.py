@@ -85,15 +85,16 @@ class SVI(nn.Module):
         # Enumerate choices of label
         logits, preds = self.model.classify(x)
         if not is_labelled:
-            if normal:
-                ys = enumerate_discrete(xs, self.model.y_dim)
-                xs = xs.repeat(self.model.y_dim, 1)
+            if 0:
+                ys = torch.autograd.Variable(torch.from_numpy(np.random.randint(0,2,size=(np.power(2, self.model.y_dim), self.model.y_dim)))).repeat(xs.shape[0], 1).float()#enumerate_discrete(xs, self.model.y_dim)
+                xs = xs.repeat(np.power(2, self.model.y_dim), 1)
             else:
                 if temperature is None:
                     print("Error, temperatureerature not given: Exiting")
                     exit()
-                # ys = gumbel_softmax(preds, temperature)
-                ys = gumbel_multiSample(logits, temperature)
+                # ys = gumbel_softmax(logits, temp)
+                ys = gumbel_multiSample(logits, temp)
+                # ys = gumbel_multiSample(preds, temp)
 
 =======
     def forward(self, xs, ys=None, temp=None, normal=0):

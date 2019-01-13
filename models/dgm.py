@@ -41,22 +41,19 @@ class Classifier(nn.Module):
         x = self.dense_2(x)
         x = F.relu(x)
         #------------------------------------------------------
-        if self.twoOut:
+        if self.type:
+            logits = self.logits(x)
+            preds = F.sigmoid(x)
+        ########################################################
+        else:
             predsP = self.logitsP(x)
             predsN = self.logitsN(x)
             predsP = predsP.view(predsP.shape[0], predsP.shape[1], 1)
             predsN = predsN.view(predsN.shape[0], predsN.shape[1], 1)
             logits = torch.cat((predsP, predsN), dim=-1)
             preds = F.softmax(logits, dim=-1)[:,:,0]
-            return logits, preds
         ########################################################
-        else:
-            x = F.sigmoid(self.logits(x))
-            x1 = x.view(x.shape[0], x.shape[1], 1)
-            logits = torch.cat((x1, 1 - x1), dim=-1)
-            return torch.log(logits+1e-8), x
-        ########################################################
-
+        return logits, preds
 
 class DeepGenerativeModel(VariationalAutoencoder):
     def __init__(self, dims, params):
