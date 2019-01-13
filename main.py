@@ -35,61 +35,57 @@ params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delic
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
 params.add_argument('--lr', dest='lr', type=float, default=3e-4, help='mnist; delicious;')
-params.add_argument('--new', dest='new', type=int, default=0, help='mnist; delicious;')
+params.add_argument('--new', type=int, default=0, help='mnist; delicious;')
+params.add_argument('--epochs', type=int, default=2500, help='num epochs')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
 
 if __name__ == "__main__":
-    lr = params.lr
     viz = Visualizer(params)
     if not os.path.exists('logs'):
     	os.makedirs('logs')
+    if not os.path.exists('saved_models'):
+    	os.makedirs('saved_models')
+    
     logFile = params.mn if len(params.mn) else str(datetime.now())
     print("=================== Name of logFile is =======    " + logFile + "     ==========")
     logFile = open('logs/' + logFile + '.logs', 'w+')
     dgm = open('models/dgm.py').read()
     logFile.write(" WE are running on " + str(params.ss) + "    ====\n")
-    logFile.write(" WE are having LR " + str(lr) + "    ====\n")    
+    logFile.write(" WE are having LR " + str(params.lr) + "    ====\n")    
     logFile.write('=============== DGM File ===================\n\n')
     logFile.write(dgm)
     logFile.write('\n\n=============== VAE File ===================\n\n')
     logFile.write(open('models/vae.py').read())
     
     params.temp = 1.0
-    params.reconFact = 1.0
-    params.n_labels = 10
-    # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
     params.bestR = 1e10
     params = get_dataset(params)
-    print(params.alpha)
-    params.epochs = 2510
     params.step = 0
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
-    if params.cuda:
-        model = model.cuda()
-    # , sampler=sampler) #,beta=beta)
-    elbo = SVI(model, params, likelihood=binary_cross_entropy)
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=lr, betas=(0.9, 0.999))
-    init = 0
 
-    if(params.lm==1):
+    if(params.lm):
         print("================= Loading Model 1 ============================")
         model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
-    elif(params.lm==2):
-        print("================= Loading Model 2 ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_regen_' + params.mn + "_" + str(params.ss), optimizer)
+    else:
+        model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
+        optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
+        init = 0
+
+    if params.cuda:
+        model = model.cuda()
+
+    elbo = SVI(model, params, likelihood=binary_cross_entropy)
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, viz=viz)
-        # if epoch % 1 == 0:
-        #     lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-        #     losses += lossesT
-        #     losses_names += losses_namesT
+        if epoch % 1 == 0:
+            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+            losses += lossesT
+            losses_names += losses_namesT
 
         # lossDict = {}
         # for key, val in zip(losses_names, losses):

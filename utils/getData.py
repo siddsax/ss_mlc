@@ -23,7 +23,7 @@ class CombineDataset(data.Dataset):
 
     def __getitem__(self,index):
         return self.data1[index], self.data2[index%self.size2]
-
+scaler
 def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
 
     flatten_bernoulli = lambda x: transforms.ToTensor()(x).view(-1).bernoulli()
@@ -56,28 +56,26 @@ def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
 
 class Dataset(data.Dataset):
     def __init__(self, params, dtype, sp, scaler=None):
-        self.sp = sp
-        if scaler is None and sp==0:
-            x_for_pp = np.load('datasets/' + params.data_set + '/x_tr.npy')
-            pp = MinMaxScaler()
-            self.scaler = pp.fit(x_for_pp)
-        elif sp==0:
-            self.scaler = scaler
-        if(sp):
+        self.sparse = sp
+
+        if(self.sparse):
             self.x = sparse.load_npz('datasets/' + params.data_set + '/x_' + dtype + '.npz').astype('float32')
             self.x = self.x/self.x.max()
             self.y = sparse.load_npz('datasets/' + params.data_set + '/y_' + dtype + '.npz').astype('float32')
         else:
-            pp = MinMaxScaler()
-            #self.x = pp.fit_transform(np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy')).astype('float32')
+            if scaler is None:
+                x_for_pp = np.load('datasets/' + params.data_set + '/x_tr.npy')
+                pp = MinMaxScaler()
+                self.scaler = pp.fit(x_for_pp)
+            else:
+                self.scaler = scaler
             self.x = np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
             self.x = self.x/self.x.max()
-	    print("----")
+
 	    self.y = np.load('datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
         self.maxX = self.x.max()
-	print(self.x.shape)
-	print(self.y.shape)
-        print("=== INIT ==== " + dtype)
+        print(self.x.shape, self.y.shape)
+    
     def __len__(self):
         return self.x.shape[0]
 
@@ -86,7 +84,7 @@ class Dataset(data.Dataset):
     def getDims(self):
         return self.x.shape[-1]
     def getScaler(self):
-        if self.sp:
+        if self.sparse:
             print("** cant scale sparse data **")
             exit()
         else:
