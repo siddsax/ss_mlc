@@ -33,7 +33,8 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
         classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
 
         if params.ss:
-            L, kl, recon, prior, U, klU, reconU, H, priorU = elbo(x, y=y), elbo(u, temperature=params.temperature, normal=params.normal)
+            L, kl, recon, prior = elbo(x, y=y) 
+            U, klU, reconU, H, priorU = elbo(u, temperature=params.temperature, normal=params.normal)
             loss = L + classication_loss + U
         else:
             kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
@@ -47,7 +48,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
         classication_loss = classication_loss.data.cpu().numpy()
         params.step += 1
 
-        if(iterator % int(max(len(params.unlabelled), 3))==0):
+        if(iterator % int(max(len(params.unlabelled)/3, 3))==0):
           toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, \
           entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(float(params.epoch), float(iterator), \
           float(len(params.unlabelled)), float(loss.data.cpu().numpy()), float(kl), float(recon), float(klU), float(reconU),\
@@ -115,7 +116,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
       params.bestP = P[0]
       save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
 
-    toPrint = 'reconFromY {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} '.format(\
+    toPrint = '[TEST] reconFromY {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} '.format(\
     float(reconFromY/m), float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
     toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
 

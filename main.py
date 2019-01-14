@@ -43,7 +43,7 @@ params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
 
 if __name__ == "__main__":
-    viz = Visualizer(params)
+    # viz = Visualizer(params)
     if not os.path.exists('logs'):
     	os.makedirs('logs')
     if not os.path.exists('saved_models'):
@@ -81,11 +81,11 @@ if __name__ == "__main__":
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
-        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, viz=viz)
-        if epoch % 1 == 0:
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-            losses += lossesT
-            losses_names += losses_namesT
+        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile)#, viz=viz)
+
+        # lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        # losses += lossesT
+        # losses_names += losses_namesT
 
         # lossDict = {}
         # for key, val in zip(losses_names, losses):

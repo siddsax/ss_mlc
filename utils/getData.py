@@ -23,7 +23,7 @@ class CombineDataset(data.Dataset):
 
     def __getitem__(self,index):
         return self.data1[index], self.data2[index%self.size2]
-scaler
+
 def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
 
     flatten_bernoulli = lambda x: transforms.ToTensor()(x).view(-1).bernoulli()
@@ -94,7 +94,7 @@ class Dataset(data.Dataset):
         # print("*** Getting Item ******")
         x = self.x[index, :]
         y = self.y[index, :]
-        if self.sp:
+        if self.sparse:
             x = x.todense()
             y = y.todense()
         X = torch.from_numpy(x.reshape((1, x.shape[-1])))#torch.load('data/' + ID + '.pt')
