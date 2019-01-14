@@ -2,24 +2,33 @@ import numpy as np
 from scipy import sparse
 import time
 import random
+import argparse
+
+params = argparse.ArgumentParser(description='Process some integers.')
+params.add_argument('--p', dest='percentage', required=True, type=float, help='percentage to sample data')
+params.add_argument('--d', dest='dataset', required=True, type=str, help='directory of dataset')
+params = params.parse_args()
 
 try:
-	x  = np.load('x_tr.npy')
-	ty = np.load('y_tr.npy')
+	x  = np.load(params.dataset + '/x_tr.npy')
+	ty = np.load(params.dataset + '/y_tr.npy')
 	sprse = 0
 except:
-	x  = sparse.load_npz('x_tr.npz')
-	ty = sparse.load_npz('y_tr.npz')
+	x  = sparse.load_npz(params.dataset + '/x_tr.npz')
+	ty = sparse.load_npz(params.dataset + '/y_tr.npz')
 	sprse = 1
 
-index_shuf = random.shuffle(range(x.shape[0]))
+# Shuffling
+index_shuf = range(x.shape[0])
+random.shuffle(index_shuf)
+
 x = x[index_shuf]
 ty = ty[index_shuf]
 
 labels_num = np.sum(ty,axis=0)
 removed_indices = []
 N = ty.shape[0]
-nf = .05*N
+nf = params.percentage*N/100.0
 n_now = N
 labels_num = np.sum(ty,axis=0)
 not_zero = np.argwhere(labels_num!=0)
@@ -29,8 +38,8 @@ print(ty.shape)
 trigger = 0
 while (ty.shape[0] > nf):
 
-    candidate = labels_num - ty[0]
-    not_zero = np.argwhere(labels_num!=0)[0,:]
+        candidate = labels_num - ty[0]
+        not_zero = np.argwhere(labels_num!=0)[0,:]
 
     # if(len(np.argwhere(candidate[not_zero]==0))==0):
 	print("="*10 + " "*5 + str(ty.shape[0]) + "/" + str(nf) +" "*5 + "="*10)
@@ -55,8 +64,8 @@ while (ty.shape[0] > nf):
 print(x.shape, ty.shape)
 
 if sprse:
-	sparse.save_npz('x_subs', x)
-	sparse.save_npz('y_subs', ty)
+	sparse.save_npz(params.dataset + 'x_subs', x)
+	sparse.save_npz(params.dataset + 'y_subs', ty)
 else:
-	np.save('x_subs', x)
-	np.save('y_subs', ty)
+	np.save(params.dataset + '/x_subs', x)
+	np.save(params.dataset + '/y_subs', ty)
