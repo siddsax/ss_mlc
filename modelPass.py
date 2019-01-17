@@ -18,8 +18,10 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
   
     model.train()
 
-    for iterator, ((u, _), (x, y)) in enumerate(params.allData):
+    for iterator, ((u, _), (x, y)) in enumerate(zip(params.unlabelled, params.labelled)):#allData):
 
+        #import pdb;pdb.set_trace()
+        
         # Parameters
         params.kl_annealling = 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
         params.temperature = max(.5, 1.0 * np.exp(- params.step*3e-4))
@@ -49,15 +51,15 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
         params.step += 1
 
         if(iterator % int(max(len(params.unlabelled)/3, 3))==0):
-          toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, \
-          entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(float(params.epoch), float(iterator), \
-          float(len(params.unlabelled)), float(loss.data.cpu().numpy()), float(kl), float(recon), float(klU), float(reconU),\
-          float(H), float(classication_loss), float(prior), float(priorU))
+            toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, \
+            entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(float(params.epoch), float(iterator), \
+            float(len(params.unlabelled)), float(loss.data.cpu().numpy()), float(kl), float(recon), float(klU), float(reconU),\
+            float(H), float(classication_loss), float(prior), float(priorU))
 
-          print(toPrint)
-          ############## NOT USING ALL DATA ###############################################################
-          lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile)#, testBatch=np.inf)
-          #################################################################################################
+            print(toPrint)
+            ############## NOT USING ALL DATA ###############################################################
+            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile)#, testBatch=np.inf)
+            #################################################################################################
     
     precision = 100*precision_k(y.data.cpu().numpy().squeeze(), preds.data.cpu().numpy().squeeze(), 5)
     if params.ss:
@@ -128,3 +130,4 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
           return [P[0], mseLoss / m, Lpred / m, Lgt/m], ['Prec_1_Test', 'BCELossTest', 'lblLossPred', 'lblLossGT']
     else:
           return [P[0], mseLoss / m], ['Prec_1_Test', 'BCELossTest']
+

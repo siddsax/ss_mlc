@@ -11,6 +11,9 @@ import torchvision.transforms as transforms
 from utils import *
 from scipy import sparse
 
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
+
 class CombineDataset(data.Dataset):
     def __init__(self, dataLrg, dataSml):
         self.data1 = dataLrg#call first instance
@@ -126,20 +129,26 @@ def get_dataset(params):
         print("TYPE 3")
         print("Loading dataset " + params.data_set)
         print("="*50)
-        args = {'batch_size': params.mb,
-            'shuffle': True,
-            'num_workers': 2}
         params.labelled = Dataset(params, "new", 0) if params.new else Dataset(params, "subs", 0)
         scaler = params.labelled.getScaler()
         params.unlabelled =  Dataset(params, "new", 0) if  params.new else Dataset(params, "tr", 0, scaler)
-        params.allData = data.DataLoader(CombineDataset(params.unlabelled, params.labelled), **args)
+        
+        
+        args = {'batch_size': params.mb,
+            'shuffle': True,
+            'num_workers': 2}
+        argsL = {'batch_size': max(2, params.mb//(len(params.unlabelled)/len(params.labelled))),
+            'shuffle': True,
+            'num_workers': 1}
 
+        params.allData = data.DataLoader(CombineDataset(params.unlabelled, params.labelled), **args)
         params.n_labels = params.labelled.getClasses()
         params.xdim = params.labelled.getDims()
         params.maxX = params.unlabelled.maxX
 
         params.unlabelled = data.DataLoader(params.unlabelled, **args)
-        params.labelled = data.DataLoader(params.labelled, **args)
+        params.labelled = data.DataLoader(params.labelled, **argsL)
         params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
     return params
+
 

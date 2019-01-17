@@ -33,10 +33,12 @@ params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or 
 params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
-params.add_argument('--t', dest='twoOut', type=float, default=5, help='mnist; delicious;')
+params.add_argument('--t', dest='twoOut', type=float, default=0, help='mnist; delicious;')
 params.add_argument('--lr', dest='lr', type=float, default=3e-4, help='mnist; delicious;')
 params.add_argument('--new', type=int, default=0, help='mnist; delicious;')
 params.add_argument('--epochs', type=int, default=2500, help='num epochs')
+params.add_argument('--step_size', type=int, default=5, help='num epochs')
+
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
@@ -66,13 +68,15 @@ if __name__ == "__main__":
     params = get_dataset(params)
     params.step = 0
 
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
+    optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
     if(params.lm):
         print("================= Loading Model 1 ============================")
         model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
     else:
-        model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
-        optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
         init = 0
+    
+    params.scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=params.step_size, gamma=0.9)
 
     if params.cuda:
         model = model.cuda()
@@ -81,9 +85,11 @@ if __name__ == "__main__":
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
+        params.scheduler.step()
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile)#, viz=viz)
-
-        # lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        print("===== ----- Full test data  ------ =====")
+        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        print("========================================")
         # losses += lossesT
         # losses_names += losses_namesT
 
