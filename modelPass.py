@@ -14,7 +14,7 @@ from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
 from precision_k import *
 
-def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
+def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
   
     model.train()
 
@@ -23,9 +23,9 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
         #import pdb;pdb.set_trace()
         
         # Parameters
-        params.kl_annealling = 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
+        params.kl_annealling = 0 if epoch < 5 else 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
         params.temperature = max(.5, 1.0 * np.exp(- params.step*3e-4))
-
+        
         # Data
         x, y, u = Variable(x).squeeze().float(), Variable(y).squeeze().float(), Variable(u).squeeze().float()
         if params.cuda:
@@ -37,11 +37,18 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
         if params.ss:
             L, kl, recon, prior = elbo(x, y=y) 
             U, klU, reconU, H, priorU = elbo(u, temperature=params.temperature, normal=params.normal)
-            loss = L + classication_loss + U
+            loss = L + classication_loss
+            # if epoch > 5:
+            loss += U
+            # else:
+            #     U, klU, reconU, H, priorU = 0.0, 0.0, 0.0, 0.0, 0.0
         else:
             kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             loss = classication_loss
 
+
+
+        
         # Loss propogation
         loss.backward()
         optimizer.step()
@@ -51,6 +58,9 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
         params.step += 1
 
         if(iterator % int(max(len(params.unlabelled)/3, 3))==0):
+            
+            if kl < 0:
+                import pdb;pdb.set_trace()
             toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, \
             entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(float(params.epoch), float(iterator), \
             float(len(params.unlabelled)), float(loss.data.cpu().numpy()), float(kl), float(recon), float(klU), float(reconU),\
@@ -61,6 +71,9 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
             lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile)#, testBatch=np.inf)
             #################################################################################################
     
+        if iterator > 10 and epoch > 5:
+            break
+
     precision = 100*precision_k(y.data.cpu().numpy().squeeze(), preds.data.cpu().numpy().squeeze(), 5)
     if params.ss:
       return [precision[0], classication_loss, recon], ['Prec_1', 'BCELoss', 'lblLossTrain']
@@ -72,11 +85,12 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
 
     model.eval()
     mseLoss, total_loss, labelled_loss, unlabelled_loss, kl, recon, Lpred, Lgt, reconU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-    m = len(params.validation)
+    
+    
     dataPts, XAll, ygt, ypred = 0, [], [], []
     reconFromY = 0.0
 
-    for x, y in params.validation:
+    for i, (x, y) in enumerate(params.validation):
         x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
         dataPts += x.shape[0]
         if dataPts > testBatch:
@@ -111,12 +125,9 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
         Lgt += L.data.cpu().numpy()
         reconFromY += torch.sum(torch.mul(diff, diff), dim=-1).data.cpu().numpy().mean()
         
+    m = min(len(params.validation), i)
     ygt, ypred, XAll = np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0), np.concatenate(XAll, axis=0)
     P = 100*precision_k(ygt, ypred,5)
-    
-    if P[0] > params.bestP:
-      params.bestP = P[0]
-      save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
 
     toPrint = '[TEST] reconFromY {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} '.format(\
     float(reconFromY/m), float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
@@ -131,3 +142,4 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
     else:
           return [P[0], mseLoss / m], ['Prec_1_Test', 'BCELossTest']
 
+# 36.6

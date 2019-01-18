@@ -1,3 +1,3 @@
-from .vae import VariationalAutoencoder, LadderVariationalAutoencoder, GumbelAutoencoder
+from .vae import VariationalAutoencoder
 from .dgm import DeepGenerativeModel
 

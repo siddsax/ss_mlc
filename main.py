@@ -68,7 +68,7 @@ if __name__ == "__main__":
     params = get_dataset(params)
     params.step = 0
 
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 100, [600, 200]], params)
+    model = DeepGenerativeModel([params.xdim, params.n_labels, 10, [600, 200]], params)
     optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
     if(params.lm):
         print("================= Loading Model 1 ============================")
@@ -86,10 +86,9 @@ if __name__ == "__main__":
     for epoch in range(init, params.epochs):
         params.epoch = epoch
         params.scheduler.step()
-        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile)#, viz=viz)
+        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, epoch)#, viz=viz)
         print("===== ----- Full test data  ------ =====")
         lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-        print("========================================")
         # losses += lossesT
         # losses_names += losses_namesT
 
@@ -98,3 +97,8 @@ if __name__ == "__main__":
         #     lossDict[key] = val
         # viz.plot_current_losses(epoch, lossDict)
         print("="*100)
+
+        if lossesT[0] > params.bestP:
+            params.bestP = lossesT[0]
+            save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
+

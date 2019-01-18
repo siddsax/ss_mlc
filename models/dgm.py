@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.nn import init
 import numpy as np
 from .vae import VariationalAutoencoder
-from .vae import Encoder, Decoder, LadderEncoder, LadderDecoder
+from .vae import Encoder, Decoder
 
 def weights_init(m):
     if(torch.__version__=='0.4.0'):
@@ -80,8 +80,8 @@ class DeepGenerativeModel(VariationalAutoencoder):
         z, z_mu, z_log_var = self.encoder(torch.cat([x, y], dim=1))
         x_mu = self.decoder(torch.cat([z, y], dim=1))
 
-        self.kl_divergence = self._kld(z, (z_mu, z_log_var))
-
+        #self.kl_divergence = self._kld(z, (z_mu, z_log_var))
+        self.kl_divergence = self.kl(z_mu, z_log_var)
         return x_mu
 
     def classify(self, x):

@@ -90,19 +90,20 @@ class SVI(nn.Module):
                     print("Error, temperatureerature not given: Exiting")
                     exit()
                 # ys = gumbel_softmax(preds, temperature)
-                ys = gumbel_multiSample(logits, temperature)
-
+                #ys = gumbel_multiSample(logits, temperature)
+                ys = preds
+                
         reconstruction = self.model(xs, ys)
 
         # p(x|y,z)
         diff = reconstruction - xs
-        likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
+        recon_loss = torch.sum(torch.mul(diff, diff), dim=-1)
         # p(y)
-        prior = -log_standard_categorical(ys)
+        prior = log_standard_categorical(ys)
 
-        L = likelihood + prior - float(self.params.kl_annealling) * self.model.kl_divergence
+        L = 10*recon_loss + prior + self.model.kl_divergence * float(self.params.kl_annealling)
         if is_labelled:
-            return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
+            return torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), np.mean(recon_loss.data.cpu().numpy()), np.mean(prior.data.cpu().numpy())
 
         if normal:
             L = L.view_as(logits.t()).t()
@@ -111,6 +112,6 @@ class SVI(nn.Module):
         H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
 
         # Carefully written
-        U = - L #+ self.params.kl_annealling *H
+        U = recon_loss + prior + self.model.kl_divergence #+ H #* float(self.model.kl_divergence)
 
-        return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
+        return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), np.mean(recon_loss.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), np.mean(prior.data.cpu().numpy())
