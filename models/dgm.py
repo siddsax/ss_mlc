@@ -6,16 +6,18 @@ import torch.nn.functional as F
 from torch.nn import init
 import numpy as np
 from networks import *
+from layers import GaussianSample
 
 class DeepGenerativeModel(nn.Module):
-    def __init__(self, params):
+    def __init__(self, params, sample_layer=GaussianSample):
 
         super(DeepGenerativeModel, self).__init__()
         self.params = params
 
-        self.encoder = Encoder(params)
+        self.featureLearn = Encoder(params)
         self.decoder = Decoder(params)
         self.classifier = Classifier(params)
+        self.sample = sample_layer(200, params.z_dim)
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -25,7 +27,8 @@ class DeepGenerativeModel(nn.Module):
 
     def forward(self, x, y):
 
-        z, z_mu, z_log_var = self.encoder(torch.cat([x, y], dim=1))
+        hidden = self.featureLearn(x)
+        z, z_mu, z_log_var = self.sample(hidden)
         x_mu = self.decoder(torch.cat([z, y], dim=1))
 
         self.kl_divergence = self.kl(z_mu, z_log_var)
@@ -33,8 +36,10 @@ class DeepGenerativeModel(nn.Module):
         return x_mu
 
     def classify(self, x):
-        
-        logits = self.classifier(x)
+
+        hidden = self.featureLearn(x)
+        logits = self.classifier(hidden)
+
         return logits
 
     def kl(self, z_mean, z_log_var):

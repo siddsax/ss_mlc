@@ -10,13 +10,11 @@ class Encoder(nn.Module):
 
         super(Encoder, self).__init__()
 
-        inputDim = params.x_dim + params.y_dim
+        inputDim = params.x_dim# + params.y_dim
         self.bn_cat = nn.BatchNorm1d(inputDim)
 
         self.fc_1 = nn.Linear(inputDim, 600)
         self.fc_2 = nn.Linear(600, 200)
-        self.sample = sample_layer(200, params.z_dim)
-
 
     def forward(self, x):
 
@@ -24,7 +22,7 @@ class Encoder(nn.Module):
         x = F.relu(self.fc_1(x))
         x = F.relu(self.fc_2(x))
 
-        return self.sample(x)
+        return x
 
 class Decoder(nn.Module):
     def __init__(self, params):
@@ -52,8 +50,8 @@ class Classifier(nn.Module):
 
         self.twoOut = params.twoOut
         self.drp_5 = nn.Dropout(.5)
-        self.fc_1 = nn.Linear(params.x_dim, 900)
-        self.fc_2 = nn.Linear(900, 600)
+        self.fc_1 = nn.Linear(200, 600)
+        # self.fc_2 = nn.Linear(300, 600)
 
         self.logits = nn.Linear(600, params.y_dim)
         self.logitsP = nn.Linear(600, params.y_dim)
@@ -63,8 +61,8 @@ class Classifier(nn.Module):
     def forward(self, x):
 
         x = F.relu(self.fc_1(x))
-        x = self.drp_5(x)
-        x = F.relu(self.fc_2(x))
+        # x = self.drp_5(x)
+        # x = F.relu(self.fc_2(x))
 
         if self.twoOut:
             predsP = self.logitsP(x)
