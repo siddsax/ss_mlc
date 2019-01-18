@@ -38,6 +38,7 @@ params.add_argument('--lr', dest='lr', type=float, default=3e-4, help='mnist; de
 params.add_argument('--new', type=int, default=0, help='mnist; delicious;')
 params.add_argument('--epochs', type=int, default=2500, help='num epochs')
 params.add_argument('--step_size', type=int, default=5, help='num epochs')
+params.add_argument('--z_dim', type=int, default=10, help='latent layer dimension')
 
 
 params = params.parse_args()
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     params = get_dataset(params)
     params.step = 0
 
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 10, [600, 200]], params)
+    model = DeepGenerativeModel(params)
     optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
     if(params.lm):
         print("================= Loading Model 1 ============================")

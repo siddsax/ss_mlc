@@ -29,7 +29,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         # Data
         x, y, u = Variable(x).squeeze().float(), Variable(y).squeeze().float(), Variable(u).squeeze().float()
         if params.cuda:
-          x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
+            x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
 
         logits, preds = model.classify(x)
         classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]

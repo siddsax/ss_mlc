@@ -31,17 +31,17 @@ def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
 
     flatten_bernoulli = lambda x: transforms.ToTensor()(x).view(-1).bernoulli()
     mnist_train = MNIST(location, train=True, download=True,
-                        transform=flatten_bernoulli, target_transform=onehot(params.n_labels))
+                        transform=flatten_bernoulli, target_transform=onehot(params.y_dim))
     mnist_valid = MNIST(location, train=False, download=True,
-                        transform=flatten_bernoulli, target_transform=onehot(params.n_labels))
+                        transform=flatten_bernoulli, target_transform=onehot(params.y_dim))
 
     def get_sampler(labels, n=None):
-        # Only choose digits in n_labels
-        (indices,) = np.where(reduce(__or__, [labels == i for i in np.arange(params.n_labels)]))
+        # Only choose digits in y_dim
+        (indices,) = np.where(reduce(__or__, [labels == i for i in np.arange(params.y_dim)]))
 
         # Ensure uniform distribution of labels
         np.random.shuffle(indices)
-        indices = np.hstack([list(filter(lambda idx: labels[idx] == i, indices))[:n] for i in range(params.n_labels)])
+        indices = np.hstack([list(filter(lambda idx: labels[idx] == i, indices))[:n] for i in range(params.y_dim)])
 
         indices = torch.from_numpy(indices)
         sampler = SubsetRandomSampler(indices)
@@ -49,9 +49,9 @@ def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
 
     # Dataloaders for MNIST
     labelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda,
-                                           sampler=get_sampler(mnist_train.train_labels.numpy(), labels_per_class))
+                                           sampler=get_sampler(mnist_train.traiy_dim.numpy(), labels_per_class))
     unlabelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda,
-                                             sampler=get_sampler(mnist_train.train_labels.numpy()))
+                                             sampler=get_sampler(mnist_train.traiy_dim.numpy()))
     validation = torch.utils.data.DataLoader(mnist_valid, batch_size=batch_size, num_workers=2, pin_memory=params.cuda,
                                              sampler=get_sampler(mnist_valid.test_labels.numpy()))
 
@@ -108,8 +108,8 @@ class Dataset(data.Dataset):
 def get_dataset(params):
     if params.data_set=="mnist":
         params.labelled, params.unlabelled, params.validation, params.allData =  get_mnist(params)
-        params.n_labels = 10
-        params.xdim = 784
+        params.y_dim = 10
+        params.x_dim = 784
     elif params.data_set=="amzn" or params.data_set=="rcv":
         print("TYPE 2")
         print("Loading dataset " + params.data_set)
@@ -118,8 +118,8 @@ def get_dataset(params):
             'shuffle': True,
             'num_workers': 0 }
         params.labelled = Dataset(params, "subs", 1)
-        params.n_labels = params.labelled.getClasses()
-        params.xdim = params.labelled.getDims()
+        params.y_dim = params.labelled.getClasses()
+        params.x_dim = params.labelled.getDims()
         params.labelled = data.DataLoader(params.labelled, **args)
         params.unlabelled = data.DataLoader(Dataset(params, "tr", 1), **args)
         params.maxX = Dataset(params, "tr", 1).maxX
@@ -142,8 +142,8 @@ def get_dataset(params):
             'num_workers': 1}
 
         params.allData = data.DataLoader(CombineDataset(params.unlabelled, params.labelled), **args)
-        params.n_labels = params.labelled.getClasses()
-        params.xdim = params.labelled.getDims()
+        params.y_dim = params.labelled.getClasses()
+        params.x_dim = params.labelled.getDims()
         params.maxX = params.unlabelled.maxX
 
         params.unlabelled = data.DataLoader(params.unlabelled, **args)
