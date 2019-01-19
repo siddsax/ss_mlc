@@ -89,19 +89,25 @@ class SVI(nn.Module):
                 if temperature is None:
                     print("Error, temperatureerature not given: Exiting")
                     exit()
-                # ys = gumbel_softmax(preds, temperature)
+                ys = gumbel_softmax(preds, temperature)
                 #ys = gumbel_multiSample(logits, temperature)
                 ys = preds
                 
         reconstruction = self.model(xs, ys)
 
         # p(x|y,z)
-        diff = reconstruction - xs
-        recon_loss = torch.sum(torch.mul(diff, diff), dim=-1)
+        # diff = reconstruction - xs
+        # recon_loss = torch.sum(torch.mul(diff, diff), dim=-1)
+       
+        recon_loss = - torch.sum(torch.mul(xs, torch.log(reconstruction + 1e-5)), dim=-1)
+ 
+        
         # p(y)
         prior = log_standard_categorical(ys)
 
+        #print(recon_loss)
         L = 10*recon_loss + prior + self.model.kl_divergence * float(self.params.kl_annealling)
+        #print(L);print(recon_loss + prior + self.model.kl_divergence * float(self.params.kl_annealling));print(recon_loss);exit()
         if is_labelled:
             return torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), np.mean(recon_loss.data.cpu().numpy()), np.mean(prior.data.cpu().numpy())
 

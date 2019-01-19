@@ -24,7 +24,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         
         # Parameters
         params.kl_annealling = 0 if epoch < 5 else 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
-        params.temperature = max(.5, 1.0 * np.exp(- params.step*3e-4))
+        params.temperature = max(.5, 1.0 * np.exp(- params.step*3e-5))
         
         # Data
         x, y, u = Variable(x).squeeze().float(), Variable(y).squeeze().float(), Variable(u).squeeze().float()
@@ -37,9 +37,11 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         if params.ss:
             L, kl, recon, prior = elbo(x, y=y) 
             U, klU, reconU, H, priorU = elbo(u, temperature=params.temperature, normal=params.normal)
-            loss = L + classication_loss
+            loss = L
             # if epoch > 5:
             loss += U
+            if epoch > 50:
+               loss += classification_loss
             # else:
             #     U, klU, reconU, H, priorU = 0.0, 0.0, 0.0, 0.0, 0.0
         else:
@@ -58,10 +60,11 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
             
             if kl < 0:
                 import pdb;pdb.set_trace()
-            toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, \
-            entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(float(params.epoch), float(iterator), \
-            float(len(params.unlabelled)), float(loss.data.cpu().numpy()), float(kl), float(recon), float(klU), float(reconU),\
-            float(H), float(classication_loss), float(prior), float(priorU))
+            toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; L {:.2f}, U {:.2f} ,Classify_loss {:.2f}, KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, \
+            entropy {:.2f}; prior {:.2f}; priorU {:.2f}".format(float(params.epoch), float(iterator), \
+            float(len(params.unlabelled)), float(loss.data.cpu().numpy()), float(L.data.cpu().numpy()), \
+            float(U.data.cpu().numpy()), float(classication_loss), float(kl), float(recon), float(klU), \
+            float(reconU), float(H), float(prior), float(priorU))
 
             print(toPrint)
             ############## NOT USING ALL DATA ###############################################################
