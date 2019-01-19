@@ -13,14 +13,16 @@ class Encoder(nn.Module):
         inputDim = params.x_dim# + params.y_dim
         self.bn_cat = nn.BatchNorm1d(inputDim)
 
-        self.fc_1 = nn.Linear(inputDim, 600)
-        self.fc_2 = nn.Linear(600, 200)
+        self.fc_1 = nn.Linear(inputDim, 2000)
+        self.fc_2 = nn.Linear(2000, 500)
+        self.fc_3 = nn.Linear(500, 500)
 
     def forward(self, x):
 
         x = self.bn_cat(x)
         x = F.relu(self.fc_1(x))
         x = F.relu(self.fc_2(x))
+        x = F.relu(self.fc_3(x))
 
         return x
 
@@ -30,15 +32,17 @@ class Decoder(nn.Module):
 
         inputDim = params.z_dim + params.y_dim
 
-        self.fc_1 = nn.Linear(inputDim, 200)
-        self.fc_2 = nn.Linear(200, 600)
-        self.reconstruction = nn.Linear(600, params.x_dim)
+        self.fc_1 = nn.Linear(inputDim, 500)
+        self.fc_2 = nn.Linear(500, 500)
+        self.fc_3 = nn.Linear(500, 2000)
+        self.reconstruction = nn.Linear(2000, params.x_dim)
         self.output_activation = nn.Sigmoid()
 
     def forward(self, x):
 
         x = F.relu(self.fc_1(x))
         x = F.relu(self.fc_2(x))
+        x = F.relu(self.fc_3(x))
         x = self.reconstruction(x)
 
         return self.output_activation(x)
@@ -50,13 +54,13 @@ class Classifier(nn.Module):
 
         self.twoOut = params.twoOut
         self.drp_5 = nn.Dropout(.5)
-        self.fc_1 = nn.Linear(200, 600)
+        self.fc_1 = nn.Linear(500, 1000)
         # self.fc_2 = nn.Linear(300, 600)
 
-        self.logits = nn.Linear(600, params.y_dim)
-        self.logitsP = nn.Linear(600, params.y_dim)
-        self.logitsN = nn.Linear(600, params.y_dim)
-        self.bn = nn.BatchNorm1d(600)
+        self.logits = nn.Linear(1000, params.y_dim)
+        self.logitsP = nn.Linear(1000, params.y_dim)
+        self.logitsN = nn.Linear(1000, params.y_dim)
+        self.bn = nn.BatchNorm1d(1000)
 
     def forward(self, x):
 
