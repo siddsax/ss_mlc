@@ -31,7 +31,12 @@ params.add_argument('--lm', dest='lm', type=int, default=0, help='load model or 
 params.add_argument('--a', dest='alpha', type=float, default=5.5, help='mnist; delicious;')
 params.add_argument('--mb', dest='mb', type=int, default=100, help='mnist; delicious;')
 params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; delicious;')
-params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
+params.add_argument('--t', dest='twoOut', type=float, default=1, help='mnist; delicious;')
+params.add_argument('--lr', dest='lr', type=float, default=1e-3, help='mnist; delicious;')
+params.add_argument('--new', type=int, default=0, help='mnist; delicious;')
+params.add_argument('--epochs', type=int, default=2500, help='num epochs')
+params.add_argument('--step_size', type=int, default=5, help='num epochs')
+params.add_argument('--z_dim', type=int, default=10, help='latent layer dimension')
 
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
@@ -42,12 +47,15 @@ if __name__ == "__main__":
     viz = Visualizer(params)
     if not os.path.exists('logs'):
     	os.makedirs('logs')
+    if not os.path.exists('saved_models'):
+    	os.makedirs('saved_models')
+
     logFile = params.mn if len(params.mn) else str(datetime.now())
     print("=================== Name of logFile is =======    " + logFile + "     ==========")
     logFile = open('logs/' + logFile + '.logs', 'w+')
     dgm = open('models/dgm.py').read()
     logFile.write(" WE are running on " + str(params.ss) + "    ====\n")
-    logFile.write(" WE are having LR " + str(lr) + "    ====\n")    
+    logFile.write(" WE are having LR " + str(params.lr) + "    ====\n")    
     logFile.write('=============== DGM File ===================\n\n')
     logFile.write(dgm)
     logFile.write('\n\n=============== VAE File ===================\n\n')
@@ -80,17 +88,16 @@ if __name__ == "__main__":
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
-        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, viz=viz)
-        if epoch % 1 == 0:
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-            losses += lossesT
-            losses_names += losses_namesT
+        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=viz)
+        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        # losses += lossesT
+        # losses_names += losses_namesT
 
-        lossDict = {}
-        for key, val in zip(losses_names, losses):
-            lossDict[key] = val
-        viz.plot_current_losses(epoch, lossDict)
-        print("="*100)
+        # lossDict = {}
+        # for key, val in zip(losses_names, losses):
+        #     lossDict[key] = val
+        # viz.plot_current_losses(epoch, lossDict)
+        # print("="*100)
 
 # 54.81946468 | 55.79
 # | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE

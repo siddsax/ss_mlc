@@ -10,6 +10,10 @@ from torchvision.datasets import MNIST
 import torchvision.transforms as transforms
 from utils import *
 from scipy import sparse
+
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
+
 class CombineDataset(data.Dataset):
     def __init__(self, dataLrg, dataSml): 
         self.data1 = dataLrg#call first instance
