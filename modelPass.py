@@ -19,8 +19,6 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
 
     model.train()
 
-    m = len(params.unlabelled)
-
     for iterator, ((u, _), (x, y)) in enumerate(zip(params.unlabelled, params.labelled)):
 
         params.kl_annealling = 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
@@ -41,7 +39,6 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
             loss = L + classication_loss + U
         else:
             kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-            recon = 0.0
             loss = classication_loss
 
         total_loss = loss.data.cpu().numpy()
@@ -59,8 +56,8 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
             float(H), float(classication_loss), float(prior), float(priorU))
 
             print(toPrint)
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-        
+            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile)
+
         classication_loss = classication_loss / params.alpha
 
     precision = 100*precision_k(y.data.cpu().numpy().squeeze(), preds.data.cpu().numpy().squeeze(), 5)
@@ -106,7 +103,6 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         ypred.append(preds.data.cpu().numpy().squeeze())
         ygt.append(y.data.cpu().numpy().squeeze())
         XAll.append(x.data.cpu().numpy().squeeze())
-        lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temp))
         Lpred += lp.data.cpu().numpy()
         Lgt += L.data.cpu().numpy()
         reconFromY += torch.sum(torch.mul(diff, diff), dim=-1).data.cpu().numpy().mean()
@@ -114,14 +110,6 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
     m = min(len(params.validation), i)
     ygt, ypred, XAll = np.concatenate(ygt, axis=0), np.concatenate(ypred, axis=0), np.concatenate(XAll, axis=0)
     P = 100*precision_k(ygt, ypred,5)
-    if P[0] > params.bestP:
-      params.bestP = P[0]
-    # save_model(model, optimizer, params.epoch, params, "/model_best_test_" + params.mn + "_" + str(params.ss))
-    # if classication_loss / m < params.best:
-    #   params.best = classication_loss / m
-    
-    # toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, classication_loss {:.2f}, best_p1 {}, best_bce {:.2f}".format(
-    #       float(params.temp), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(classication_loss/ m), params.bestP, params.best)
     toPrint = '[TEST] reconFromY {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} '.format(\
     float(reconFromY/m), float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
     toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])

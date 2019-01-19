@@ -43,7 +43,6 @@ params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
 
 if __name__ == "__main__":
-    lr = 1e-3
     viz = Visualizer(params)
     if not os.path.exists('logs'):
     	os.makedirs('logs')
@@ -61,35 +60,36 @@ if __name__ == "__main__":
     logFile.write('\n\n=============== VAE File ===================\n\n')
     logFile.write(open('models/vae.py').read())
     
-    params.best = 1e10
     params.temp = 1.0
-    params.reconFact = 1.0
-    params.n_labels = 10
-    # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
     params = get_dataset(params)
-    params.alpha = params.alpha#1 * len(params.unlabelled) / len(params.labelled)
-    print(params.alpha)
-    params.epochs = 2510
     params.step = 0
     model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [400, 300]], params)
-    if params.cuda:
-        model = model.cuda()
-    # , sampler=sampler) #,beta=beta)
-    elbo = SVI(model, params, likelihood=binary_cross_entropy)
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=lr, betas=(0.9, 0.999))
-    init = 0
 
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999))
     if(params.lm):
         print("================= Loading Model ============================")
         model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
         # model, optimizer, init = load_model(model, 'saved_models/model_best_test_1', optimizer)
+    else:
+        init = 0
+
+    if params.cuda:
+        model = model.cuda()
+    elbo = SVI(model, params, likelihood=binary_cross_entropy)
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=viz)
+
+        print("===== ----- Full test data  ------ =====")
         lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        print("="*100)
+
+        if lossesT[0] > params.bestP:
+            params.bestP = lossesT[0]
+            save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
+
         # losses += lossesT
         # losses_names += losses_namesT
 
