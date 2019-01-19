@@ -149,7 +149,7 @@ def get_dataset(params):
         params.x_dim = params.labelled.getDims()
         params.maxX = params.unlabelled.maxX
 
-        params.unlabelled = data.DataLoader(Dataset(params, "tr", 0, scaler), **args)
+        params.unlabelled = data.DataLoader(params.unlabelled, **args)
         params.labelled = data.DataLoader(params.labelled, **args)
         params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
 
