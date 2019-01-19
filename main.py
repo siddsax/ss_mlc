@@ -65,12 +65,11 @@ if __name__ == "__main__":
     params = get_dataset(params)
     params.step = 0
     model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [400, 300]], params)
+    optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999))
     if(params.lm):
         print("================= Loading Model ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
-        # model, optimizer, init = load_model(model, 'saved_models/model_best_test_1', optimizer)
+        model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
     else:
         init = 0
 

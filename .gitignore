@@ -14,3 +14,6 @@ mldata
 *.log
 *.pyc
 *.csv
+datasets
+*.lprof
+saved_models/
