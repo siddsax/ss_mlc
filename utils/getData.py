@@ -147,7 +147,7 @@ def get_dataset(params):
         params.maxX = params.unlabelled.maxX
 
         params.unlabelled = data.DataLoader(params.unlabelled, **args)
-        params.labelled = data.DataLoader(params.labelled, **argsL)
+        params.labelled = data.DataLoader(params.labelled, **args)
         params.validation = data.DataLoader(Dataset(params, "te", 0, scaler), **args)
     return params
 

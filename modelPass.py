@@ -46,9 +46,6 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
             kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             loss = classication_loss
 
-
-
-        
         # Loss propogation
         loss.backward()
         optimizer.step()

@@ -103,3 +103,4 @@ if __name__ == "__main__":
             params.bestP = lossesT[0]
             save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
 
+# 34.74
