@@ -78,7 +78,7 @@ class Dataset(data.Dataset):
             self.x = np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
             self.x = self.x/self.x.max()
 
-        self.maxX = self.x.max()
+            self.maxX = self.x.max()
 	    self.y = np.load('datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
         print(self.x.shape, self.y.shape)
 

@@ -66,7 +66,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
     else:
         return [precision[0], classication_loss], ['Prec_1', 'BCELoss']
 
-  def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
+def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
     model.eval()
     classication_loss, total_loss, labelled_loss, unlabelled_loss, kl, recon, Lpred, Lgt, reconU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
@@ -81,22 +81,23 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         if params.cuda:
             x, y = x.cuda(device=0), y.cuda(device=0)
 
+        logits, preds = model.classify(x)
+        reconstruction = model.generate(y)
+        diff = reconstruction - x
+        
         U, _, reconAU, _, _ = elbo(x, temperature=params.temperature, normal=params.normal)
         L, klA, reconA, _ = elbo(x, y=y)
         lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temperature))
-        logits, preds = model.classify(x)
 
-        reconstruction = model.generate(y)
-        diff = reconstruction - x
 
         # classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
-        classication_loss = torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
+        classication_lossBatch = torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
         loss = L + params.alpha * classication_loss + U
 
         total_loss += loss.data.cpu().numpy()
         labelled_loss += L.data.cpu().numpy()
         unlabelled_loss += U.data.cpu().numpy()
-        classication_loss += classication_loss.data.cpu().numpy()#torch.mean((pred_idx.data == lab_idx.data).float())
+        classication_loss += classication_lossBatch.data.cpu().numpy()#torch.mean((pred_idx.data == lab_idx.data).float())
         kl += klA
         recon += reconA
         reconU += reconAU

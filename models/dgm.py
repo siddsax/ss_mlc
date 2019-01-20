@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.nn import init
 import numpy as np
 from .vae import VariationalAutoencoder
-from .vae import Encoder, Decoder, LadderEncoder, LadderDecoder
+from .vae import Encoder, Decoder
 
 def weights_init(m):
     if(torch.__version__=='0.4.0'):
@@ -74,10 +74,11 @@ class DeepGenerativeModel(VariationalAutoencoder):
         """
         [x_dim, self.y_dim, z_dim, h_dim] = dims
         super(DeepGenerativeModel, self).__init__([x_dim, z_dim, h_dim])
+        self.params = params
 
         self.encoder = Encoder([x_dim + self.y_dim, h_dim, z_dim])
         self.decoder = Decoder([z_dim + self.y_dim, list(reversed(h_dim)), x_dim])
-        self.classifier = Classifier([x_dim, 600, self.y_dim], params.type)
+        self.classifier = Classifier([x_dim, 600, self.y_dim], params.twoOut)
         # self.gumbel = GumbelSoftmax(h_dim[0], self.y_dim, 10)
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -156,6 +157,14 @@ class DeepGenerativeModel(VariationalAutoencoder):
         y = y.float()
         x = self.decoder(torch.cat([z, y], dim=1))
         return x
+
+    def generate(self, cY):
+
+        epsilon = torch.autograd.Variable(torch.randn((cY.shape[0], self.params.z_dim)), requires_grad=False).float()
+        epsilon = epsilon.cuda() if cY.is_cuda else epsilon
+        x_mu = self.decoder(torch.cat([epsilon, cY.float()], dim=1))
+
+        return x_mu
 
 
 class StackedDeepGenerativeModel(DeepGenerativeModel):
@@ -314,6 +323,15 @@ class LadderDeepGenerativeModel(DeepGenerativeModel):
 
         #x_mu = self.reconstruction(torch.cat([z, y], dim=1))
         #return x_mu
+
+    def generate(self, cY):
+
+        epsilon = torch.autograd.Variable(torch.randn((cY.shape[0], self.params.z_dim)), requires_grad=False).float()
+        epsilon = epsilon.cuda() if cY.is_cuda else epsilon
+        x_mu = self.decoder(torch.cat([epsilon, cY.float()], dim=1))
+
+        return x_mu
+
 
     def sample(self, z, y):
         for i, decoder in enumerate(self.decoder):
