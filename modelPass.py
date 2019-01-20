@@ -49,9 +49,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
 
         if(iterator % int(max(m/6, 5))==0):
 
-          toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format(
-            float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU)
-          )
+          toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, entropy {:.2f}; Classify_loss {:.2f}; prior {:.2f}; priorU {:.2f}".format                     (float(params.epoch), float(iterator), float(m), float(total_loss), float(kl), float(recon), float(klU), float(reconU), float(H), float(classication_loss), float(prior), float(priorU                      ))
           print(toPrint)
           lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
 
@@ -59,7 +57,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
 
     P = 100*precision_k(y.data.cpu().numpy().squeeze(),preds.data.cpu().numpy().squeeze(), 5)
     if params.ss:
-        return [P[0], mseLoss, 100*params.temperature, recon], ['Prec_1', 'BCELoss', 'temperatureeraturex100', 'lblLossTrain']
+        return [P[0], mseLoss, recon], ['Prec_1', 'BCELoss', 'lblLossTrain']
     else:
         return [P[0], mseLoss], ['Prec_1', 'BCELoss']
 
