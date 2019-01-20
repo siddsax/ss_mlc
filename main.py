@@ -37,7 +37,8 @@ params.add_argument('--new', type=int, default=0, help='mnist; delicious;')
 params.add_argument('--epochs', type=int, default=2500, help='num epochs')
 params.add_argument('--step_size', type=int, default=5, help='num epochs')
 params.add_argument('--z_dim', type=int, default=50, help='latent layer dimension')
-
+params.add_argument('--h_dim', type=int, default=400, help='latent layer dimension')
+params.add_argument('--h_dim_2', type=int, default=300, help='latent layer dimension')
 params = params.parse_args()
 params.cuda = torch.cuda.is_available()
 print("CUDA: {}".format(params.cuda))
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     params = get_dataset(params)
     params.step = 0
 
-    model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [400, 300]], params)
+    model = DeepGenerativeModel(params)
     elbo = SVI(model, params, likelihood=binary_cross_entropy)
     optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
 
