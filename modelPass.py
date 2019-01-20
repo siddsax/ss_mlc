@@ -74,7 +74,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
     mseLoss, total_loss, labelled_loss, unlabelled_loss, kl, recon, Lpred, Lgt, reconU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     reconFromY, dataPts, XAll, ygt, ypred = 0.0, 0, [], [], []
     
-    for x, y in params.validation:
+    for iteration, (x, y) in enumerate(params.validation):
         x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
         dataPts +=x.shape[0]
         if dataPts > testBatch:
@@ -113,7 +113,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
     if P[0] > params.bestP:
         params.bestP = P[0]
 
-    m = min(len(params.validation), i)
+    m = min(len(params.validation), iteration)
     toPrint = '[TEST] reconFromY {:.6} recon {:.6f}, reconU {:.6f} lblLossPred {:.2f}, lblLossGT {:.2f} '.format(\
     float(reconFromY/m), float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
     toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])

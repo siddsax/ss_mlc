@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.nn import init
 import numpy as np
 from .vae import VariationalAutoencoder
-from .vae import Encoder, Decoder, LadderEncoder, LadderDecoder
+from .vae import Encoder, Decoder
 
 def weights_init(m):
     if(torch.__version__=='0.4.0'):
