@@ -55,50 +55,43 @@ if __name__ == "__main__":
     logFile = open('logs/' + logFile + '.logs', 'w+')
     dgm = open('models/dgm.py').read()
     logFile.write(" WE are running on " + str(params.ss) + "    ====\n")
-    params.add_argument('--t', dest='type', type=float, default=5, help='mnist; delicious;')
+    logFile.write(" WE are having LR " + str(params.lr) + "    ====\n")    
     logFile.write('=============== DGM File ===================\n\n')
     logFile.write(dgm)
     logFile.write('\n\n=============== VAE File ===================\n\n')
     logFile.write(open('models/vae.py').read())
     
     params.best = 1e10
-    params.temp = 1.0
-    params.reconFact = 1.0
-    params.n_labels = 10
-    # params.labelled, params.unlabelled, params.validation = get_mnist(params,location="./", batch_size=100, labels_per_class=100)
     params.bestP = 0.0
     params = get_dataset(params)
-    params.alpha = params.alpha#1 * len(params.unlabelled) / len(params.labelled)
-    print(params.alpha)
-    params.epochs = 2510
     params.step = 0
+
     model = DeepGenerativeModel([params.xdim, params.n_labels, 50, [400, 300]], params)
-    if params.cuda:
-        model = model.cuda()
-    # , sampler=sampler) #,beta=beta)
     elbo = SVI(model, params, likelihood=binary_cross_entropy)
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=params.lr, betas=(0.9, 0.999))
-    init = 0
+    optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
 
     if(params.lm):
         print("================= Loading Model ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_test_' + params.mn + "_" + str(params.ss), optimizer)
-        # model, optimizer, init = load_model(model, 'saved_models/model_best_test_1', optimizer)
+        model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
+    else:
+        init = 0
+
+    if params.cuda:
+        model = model.cuda()
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=viz)
-        if epoch % 1 == 0:
-            lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-            losses += lossesT
-            losses_names += losses_namesT
 
-        lossDict = {}
-        for key, val in zip(losses_names, losses):
-            lossDict[key] = val
-        viz.plot_current_losses(epoch, lossDict)
-        print("="*100)
+        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
+        losses += lossesT
+        losses_names += losses_namesT
+
+        # lossDict = {}
+        # for key, val in zip(losses_names, losses):
+        #     lossDict[key] = val
+        # viz.plot_current_losses(epoch, lossDict)
+        # print("="*100)
 
 # 54.81946468 | 55.79
 # | 55.82417846 Temp max(0.3, np.exp(-params.step*1e-4)) BCE
