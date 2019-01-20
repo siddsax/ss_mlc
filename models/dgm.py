@@ -175,6 +175,8 @@ from torch.nn import init
 import numpy as np
 from networks import *
 from layers import GaussianSample
+from inference import log_gaussian, log_standard_gaussian
+
 
 class DeepGenerativeModel(nn.Module):
     def __init__(self, params, sample_layer=GaussianSample):
@@ -195,18 +197,18 @@ class DeepGenerativeModel(nn.Module):
 
     def forward(self, x, y):
 
-        hidden = self.featureLearn(x)
+        hidden = self.featureLearn(torch.cat([x, y], dim=1))
         z, z_mu, z_log_var = self.sample(hidden)
         x_mu = self.decoder(torch.cat([z, y], dim=1))
 
-        self.kl_divergence = self.kl(z_mu, z_log_var)
-
+        #self.kl_divergence = self.kl(z_mu, z_log_var)
+        self.kl_divergence = self._kld(z, (z_mu, z_log_var))
+        
         return x_mu
 
     def classify(self, x):
 
-        hidden = self.featureLearn(x)
-        logits = self.classifier(hidden)
+        logits = self.classifier(x)
 
         return logits
 
@@ -223,9 +225,11 @@ class DeepGenerativeModel(nn.Module):
 
         return x_mu
 
-    def sample(self, z, y):
+    def _kld(self, z, q_param, p_param=None):
 
-        y = y.float()
-        x = self.decoder(torch.cat([z, y], dim=1))
-        return x
+        (mu, log_var) = q_param
+        qz = log_gaussian(z, mu, log_var)
+        pz = log_standard_gaussian(z)
+        kl = qz - pz
+        return kl
 

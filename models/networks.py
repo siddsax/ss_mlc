@@ -10,7 +10,7 @@ class Encoder(nn.Module):
 
         super(Encoder, self).__init__()
 
-        inputDim = params.x_dim# + params.y_dim
+        inputDim = params.x_dim + params.y_dim
         self.bn_cat = nn.BatchNorm1d(inputDim)
 
         self.fc_1 = nn.Linear(inputDim, params.h_dim)
@@ -39,8 +39,7 @@ class Decoder(nn.Module):
     def forward(self, x):
 
         x = F.relu(self.fc_1(x))
-        x = F.relu(self.fc_2(x))
-        x = F.relu(self.fc_3(x))
+        x = F.relu(self.fc_2(x)) 
         x = self.reconstruction(x)
 
         return self.output_activation(x)
