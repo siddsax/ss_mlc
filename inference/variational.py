@@ -87,7 +87,7 @@ class SVI(nn.Module):
                 xs = xs.repeat(self.model.y_dim, 1)
             else:
                 if temperature is None:
-                    print("Error, temperatureerature not given: Exiting")
+                    print("Error, temperature not given: Exiting")
                     exit()
                 # ys = gumbel_softmax(preds, temperature)
                 ys = gumbel_multiSample(logits, temperature)
@@ -95,13 +95,11 @@ class SVI(nn.Module):
         reconstruction = self.model(xs, ys)
 
         # p(x|y,z)
-        # likelihood = -self.likelihood(reconstruction, xs)
         diff = reconstruction - xs
         likelihood = - torch.sum(torch.mul(diff, diff), dim=-1)
         # p(y)
         prior = -log_standard_categorical(ys)
 
-        # L = (1 - self.params.kl_annealling) * likelihood - next(self.beta) * self.model.kl_divergence + prior
         L = likelihood + prior- float(self.params.kl_annealling) * self.model.kl_divergence
         if is_labelled:
             return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
@@ -111,7 +109,6 @@ class SVI(nn.Module):
             L = torch.sum(torch.mul(logits, L), dim=-1)
 
         # Calculate entropy H(q(y|x)) and sum over all labels
-        # H = -torch.sum(torch.mul(preds, torch.log(preds + 1e-8)), dim=-1)
         H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
 
         # Carefully written
