@@ -15,24 +15,20 @@ from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
 from precision_k import *
 
-def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
-  model.train()
-  iterator = 0
-  m = len(params.unlabelled)
-  # m = len(params.labelled)
-  for (u, _), (x, y) in params.allData:
-  #for (x,y) in params.unlabelled:
-      iterator += 1.0
-      # np.exp(-params.step*3e-4)
-      params.reconFact = torch.autograd.Variable(torch.from_numpy(np.array(1 - np.exp(-params.step*params.factor*1e-5)))).float()
-      if torch.cuda.is_available():
-        params.reconFact = params.reconFact.cuda()
-      params.temp = max(.5, 1.0*np.exp(-params.step*3e-4)) #default
-      # params.temp = .5 + .5* np.exp(-params.step*2.7e-4)
+def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
 
-      x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
+  model.train()
+  m = len(params.unlabelled)
+
+  for iterator, ((u, _), (x, y)) in enumerate(params.allData):
+
+      params.kl_annealling = 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
+
+      params.temperature = max(.5, 1.0*np.exp(-params.step*3e-4)) #default
+
+      x, y, u = Variable(x).squeeze().float(), Variable(y).squeeze().float(), Variable(u).squeeze().float()
       if params.cuda:
-        x, y = x.cuda(device=0), y.cuda(device=0)
+          x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
 
       # Add auxiliary classification loss q(y|x)
       _, preds = model.classify(x)
@@ -42,18 +38,14 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
 
       if params.ss:
         L, kl, recon, prior = elbo(x, y=y)
-        u = Variable(u).squeeze().float()
-        if params.cuda:
-          u = u.cuda(device=0)
-        U, klU, reconU, H, priorU = elbo(u, temp=params.temp, normal=params.normal)
-        J_alpha = L + classication_loss + U
+        U, klU, reconU, H, priorU = elbo(u, temperature=params.temperature, normal=params.normal)
+        loss = L + classication_loss + U
       else:
         kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-        recon = 0.0
-        J_alpha = classication_loss
+        loss = classication_loss
 
-      total_loss = J_alpha.data.cpu().numpy()
-      J_alpha.backward()
+      total_loss = loss.data.cpu().numpy()
+      loss.backward()
       optimizer.step()
       optimizer.zero_grad()
 
@@ -72,7 +64,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, viz=None):
 
   P = 100*precision_k(y.data.cpu().numpy().squeeze(),preds.data.cpu().numpy().squeeze(), 5)
   if params.ss:
-    return [P[0], mseLoss, 100*params.temp, recon], ['Prec_1', 'BCELoss', 'Temperaturex100', 'lblLossTrain']
+    return [P[0], mseLoss, 100*params.temperature, recon], ['Prec_1', 'BCELoss', 'temperatureeraturex100', 'lblLossTrain']
   else:
     return [P[0], mseLoss], ['Prec_1', 'BCELoss']
 
@@ -92,15 +84,15 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
       if params.cuda:
           x, y = x.cuda(device=0), y.cuda(device=0)
 
-      U, _, reconAU, _, _ = elbo(x, temp=params.temp, normal=params.normal)
+      U, _, reconAU, _, _ = elbo(x, temperature=params.temperature, normal=params.normal)
       L, klA, reconA, prior = elbo(x, y=y)
       logits, preds = model.classify(x)
 
       # classication_loss = -torch.sum(y * torch.log(logits + 1e-8), dim=1).mean()
       classication_loss = torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
-      J_alpha = L + params.alpha * classication_loss + U
+      loss = L + params.alpha * classication_loss + U
 
-      total_loss += J_alpha.data.cpu().numpy()
+      total_loss += loss.data.cpu().numpy()
       labelled_loss += L.data.cpu().numpy()
       unlabelled_loss += U.data.cpu().numpy()
       mseLoss += classication_loss.data.cpu().numpy()#torch.mean((pred_idx.data == lab_idx.data).float())
@@ -110,7 +102,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
       ypred.append(preds.data.cpu().numpy().squeeze())
       ygt.append(y.data.cpu().numpy().squeeze())
       XAll.append(x.data.cpu().numpy().squeeze())
-      lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temp))
+      lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temperature))
       Lpred += lp.data.cpu().numpy()
       Lgt += L.data.cpu().numpy()
 
@@ -122,8 +114,8 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
   # if mseLoss / m < params.best:
   #   params.best = mseLoss / m
   
-  # toPrint = "[TEST]:Temp {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}, best_bce {:.2f}".format(
-  #       float(params.temp), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP, params.best)
+  # toPrint = "[TEST]:temperature {:.3f}, Factor {:.3f}, Total Loss {:.2f}, Labelled Loss {:.2f}, KL {:.2f}, recon {:.2f}, unlabelled loss {:.2f}, mseLoss {:.2f}, best_p1 {}, best_bce {:.2f}".format(
+  #       float(params.temperature), params.reconFact.data.cpu().numpy(), float(total_loss / m), float(labelled_loss/ m), float(kl/m), float(recon/m), float(unlabelled_loss/ m), float(mseLoss/ m), params.bestP, params.best)
   toPrint = 'recon {:.2f}, reconU {:.2f} lblLossPred {:.2f}, lblLossGT {:.2f}'.format(float(recon/m), float(reconU/m), Lpred / m, Lgt/m)
   toPrint += " || Prec Best " + str(params.bestP) + " Prec. " + str(P[0])+ " " + str(P[2]) + " " + str(P[4])
   print("-"*20)

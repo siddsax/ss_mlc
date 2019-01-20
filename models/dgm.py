@@ -157,6 +157,14 @@ class DeepGenerativeModel(VariationalAutoencoder):
         x = self.decoder(torch.cat([z, y], dim=1))
         return x
 
+    def generate(self, cY):
+
+        epsilon = torch.autograd.Variable(torch.randn((cY.shape[0], self.params.z_dim)), requires_grad=False).float()
+        epsilon = epsilon.cuda() if cY.is_cuda else epsilon
+        x_mu = self.decoder(torch.cat([epsilon, cY.float()], dim=1))
+
+        return x_mu
+
 
 class StackedDeepGenerativeModel(DeepGenerativeModel):
     def __init__(self, dims, features):

@@ -71,7 +71,7 @@ class SVI(nn.Module):
         self.beta = beta
         self.params = params
 
-    def forward(self, x, y=None, temp=None, normal=0):
+    def forward(self, x, y=None, temperature=None, normal=0):
         is_labelled = False if y is None else True
 
         if not is_labelled:
@@ -86,11 +86,11 @@ class SVI(nn.Module):
                 ys = enumerate_discrete(xs, self.model.y_dim)
                 xs = xs.repeat(self.model.y_dim, 1)
             else:
-                if temp is None:
-                    print("Error, temperature not given: Exiting")
+                if temperature is None:
+                    print("Error, temperatureerature not given: Exiting")
                     exit()
-                # ys = gumbel_softmax(preds, temp)
-                ys = gumbel_multiSample(logits, temp)
+                # ys = gumbel_softmax(preds, temperature)
+                ys = gumbel_multiSample(logits, temperature)
 
         reconstruction = self.model(xs, ys)
 
@@ -101,8 +101,8 @@ class SVI(nn.Module):
         # p(y)
         prior = -log_standard_categorical(ys)
 
-        # L = (1 - self.params.reconFact) * likelihood - next(self.beta) * self.model.kl_divergence + prior
-        L = likelihood + prior- self.params.reconFact * self.model.kl_divergence
+        # L = (1 - self.params.kl_annealling) * likelihood - next(self.beta) * self.model.kl_divergence + prior
+        L = likelihood + prior- float(self.params.kl_annealling) * self.model.kl_divergence
         if is_labelled:
             return - torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
 
@@ -115,5 +115,5 @@ class SVI(nn.Module):
         H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
 
         # Carefully written
-        U = - L #+ self.params.reconFact *H
+        U = - L #+ float(self.params.kl_annealling) *H
         return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), - np.mean(likelihood.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), - np.mean(prior.data.cpu().numpy())
