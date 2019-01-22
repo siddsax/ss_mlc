@@ -15,9 +15,7 @@ X, y = load_from_arff(
     load_sparse=arff_file_is_sparse
 )
 
-dirN = path_to_arff_file.split('/')[-1].split("-")[0]
-if not os.path.exists(dirN):
-    os.makedirs(dirN)
+dirN = '/'.join(path_to_arff_file.split('/')[:-1])
 
 X, y = X.todense(), y.todense()
 
