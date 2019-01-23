@@ -95,12 +95,13 @@ class SVI(nn.Module):
                 
         reconstruction = self.model(xs, ys)
 
-        # p(x|y,z)
-        # diff = reconstruction - xs
-        # recon_loss = torch.sum(torch.mul(diff, diff), dim=-1)
+        #p(x|y,z)
+        diff = reconstruction - xs
+        recon_loss = torch.sum(torch.mul(diff, diff), dim=-1)
        
-        recon_loss = - torch.sum(torch.mul(xs, torch.log(reconstruction + 1e-5)), dim=-1)
- 
+        #recon_loss = - torch.sum(torch.mul(xs, torch.log(reconstruction + 1e-5)) + torch.mul(1 - xs, torch.log(1 - reconstruction + 1e-5)), dim=-1)
+        #if torch.mean(recon_loss) < 0:
+        #    import pdb;pdb.set_trace()
         
         # p(y)
         prior = log_standard_categorical(ys)
