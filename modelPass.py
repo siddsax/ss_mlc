@@ -23,7 +23,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         #import pdb;pdb.set_trace()
         
         # Parameters
-        params.kl_annealling = 0 if epoch < 5 else 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
+        params.kl_annealling = 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
         params.temperature = max(.5, 1.0 * np.exp(- params.step*3e-5))
         
         # Data
@@ -40,12 +40,12 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
             loss = L
             # if epoch > 5:
             loss += U
-            if epoch > 50:
-               loss += classification_loss
+            loss += classication_loss
+            L, U = float(L.data.cpu().numpy()), float(U.data.cpu().numpy())
             # else:
             #     U, klU, reconU, H, priorU = 0.0, 0.0, 0.0, 0.0, 0.0
         else:
-            kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            L, U, kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             loss = classication_loss
 
         # Loss propogation
@@ -62,8 +62,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
                 import pdb;pdb.set_trace()
             toPrint = "[TRAIN]:({}, {}/{});Total {:.2f}; L {:.2f}, U {:.2f} ,Classify_loss {:.2f}, KL_label {:.2f}, Recon_label {:.2f}; KL_ulabel {:.2f}, Recon_ulabel {:.2f}, \
             entropy {:.2f}; prior {:.2f}; priorU {:.2f}".format(float(params.epoch), float(iterator), \
-            float(len(params.unlabelled)), float(loss.data.cpu().numpy()), float(L.data.cpu().numpy()), \
-            float(U.data.cpu().numpy()), float(classication_loss), float(kl), float(recon), float(klU), \
+            float(len(params.unlabelled)), float(loss.data.cpu().numpy()), L, U, float(classication_loss), float(kl), float(recon), float(klU), \
             float(reconU), float(H), float(prior), float(priorU))
 
             print(toPrint)
