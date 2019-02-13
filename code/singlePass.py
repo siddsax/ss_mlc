@@ -18,7 +18,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
   
     model.train()
 
-    for iterator, ((u, _), (x, y)) in enumerate(zip(params.unlabelled, params.labelled)):#allData):
+    for iterator, ((u, _), (x, y)) in enumerate(zip(cycle(params.unlabelled), params.labelled)):
 
         #import pdb;pdb.set_trace()
         
@@ -34,16 +34,12 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         logits, preds = model.classify(x)
         classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
 
-        if params.ss:
+        if params.ss:        
             L, kl, recon, prior = elbo(x, y=y) 
             U, klU, reconU, H, priorU = elbo(u, temperature=params.temperature, normal=params.normal)
-            loss = L
-            # if epoch > 5:
-            loss += U
-            loss += classication_loss
+            loss = L + classication_loss + U
             L, U = float(L.data.cpu().numpy()), float(U.data.cpu().numpy())
-            # else:
-            #     U, klU, reconU, H, priorU = 0.0, 0.0, 0.0, 0.0, 0.0
+
         else:
             L, U, kl, klU, recon, reconU, H, prior, priorU  = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
             loss = classication_loss

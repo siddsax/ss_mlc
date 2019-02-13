@@ -77,7 +77,7 @@ class Classifier(nn.Module):
             preds = F.softmax(logits, dim=-1)[:,:,0]
             return logits, preds
         else:
-            x = F.sigmoid(self.logits(x))
+            x = F.softmax(self.logits(x), dim=-1)   ###################################
             try:
                 x1 = x.view(x.shape[0], x.shape[1], 1)
             except:

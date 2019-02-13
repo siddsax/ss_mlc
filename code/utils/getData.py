@@ -48,12 +48,10 @@ def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
         return sampler
 
     # Dataloaders for MNIST
-    labelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda,
-                                           sampler=get_sampler(mnist_train.traiy_dim.numpy(), labels_per_class))
-    unlabelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda,
-                                             sampler=get_sampler(mnist_train.traiy_dim.numpy()))
-    validation = torch.utils.data.DataLoader(mnist_valid, batch_size=batch_size, num_workers=2, pin_memory=params.cuda,
-                                             sampler=get_sampler(mnist_valid.test_labels.numpy()))
+    
+    labelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda, sampler=get_sampler(mnist_train.train_labels.numpy(), labels_per_class))
+    unlabelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda, sampler=get_sampler(mnist_train.train_labels.numpy()))
+    validation = torch.utils.data.DataLoader(mnist_valid, batch_size=batch_size, num_workers=2, pin_memory=params.cuda, sampler=get_sampler(mnist_valid.test_labels.numpy()))
 
     return labelled, unlabelled, validation
 
@@ -62,20 +60,20 @@ class Dataset(data.Dataset):
         self.sparse = sp
 
         if(self.sparse):
-            self.x = sparse.load_npz('datasets/' + params.data_set + '/x_' + dtype + '.npz').astype('float32')
+            self.x = sparse.load_npz('../datasets/' + params.data_set + '/x_' + dtype + '.npz').astype('float32')
             self.x = self.x/self.x.max()
-            self.y = sparse.load_npz('datasets/' + params.data_set + '/y_' + dtype + '.npz').astype('float32')
+            self.y = sparse.load_npz('../datasets/' + params.data_set + '/y_' + dtype + '.npz').astype('float32')
         else:
             if scaler is None:
-                x_for_pp = np.load('datasets/' + params.data_set + '/x_tr.npy')
+                x_for_pp = np.load('../datasets/' + params.data_set + '/x_tr.npy')
                 pp = MinMaxScaler()
                 self.scaler = pp.fit(x_for_pp)
             else:
                 self.scaler = scaler
-            self.x = np.load('datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
+            self.x = np.load('../datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
             self.x = self.x/self.x.max()
 
-	    self.y = np.load('datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
+	    self.y = np.load('../datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
         self.maxX = self.x.max()
         self.x = (self.x - self.x.min())/(self.x.max() - self.x.min())
         print(self.x.shape, self.y.shape)
@@ -108,9 +106,9 @@ class Dataset(data.Dataset):
 
 def get_dataset(params):
     if params.data_set=="mnist":
-        params.labelled, params.unlabelled, params.validation, params.allData =  get_mnist(params)
         params.y_dim = 10
         params.x_dim = 784
+        params.labelled, params.unlabelled, params.validation =  get_mnist(params)
     elif params.data_set=="amzn" or params.data_set=="rcv":
         print("TYPE 2")
         print("Loading dataset " + params.data_set)
@@ -125,7 +123,7 @@ def get_dataset(params):
         params.unlabelled = data.DataLoader(Dataset(params, "tr", 1), **args)
         params.maxX = Dataset(params, "tr", 1).maxX
         params.validation = data.DataLoader(Dataset(params, "te", 1), **args)
-        params.allData = data.DataLoader(CombineDataset(Dataset(params, "tr", 1), Dataset(params, "subs", 1)), **args)
+
     else:# params.data_set=="delicious" or params.data_set == "bibtex":
         print("TYPE 3")
         print("Loading dataset " + params.data_set)
@@ -142,7 +140,7 @@ def get_dataset(params):
             'shuffle': True,
             'num_workers': 1}
 
-        params.allData = data.DataLoader(CombineDataset(params.unlabelled, params.labelled), **args)
+
         params.y_dim = params.labelled.getClasses()
         params.x_dim = params.labelled.getDims()
         params.maxX = params.unlabelled.maxX

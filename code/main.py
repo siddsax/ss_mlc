@@ -13,7 +13,7 @@ from models import DeepGenerativeModel
 from itertools import repeat, cycle
 from torch.autograd import Variable
 from inference import SVI, DeterministicWarmup, ImportanceWeightedSampler
-from modelPass import modelTrPass, modelTePass
+from singlePass import modelTrPass, modelTePass
 import argparse
 import os
 from visualizer import Visualizer
@@ -25,7 +25,7 @@ params = argparse.ArgumentParser(description='Process some integers.')
 params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--oss', dest='oss', type=int, default=0, help='1 to ONLY do semi-super')
 params.add_argument('--ld', dest='ld', type=int, default=0, help='1 to load model')
-params.add_argument('--nrml', dest='normal', type=int, default=0, help='1 to do semi-super, 0 for not doing it')
+params.add_argument('--normal', action="store_true", default=False, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mnist; delicious;')
 params.add_argument('--zz', dest='name', type=str, default="", help='mnist; delicious;')
 params.add_argument('--mn', dest='mn', type=str, default="", help='name')

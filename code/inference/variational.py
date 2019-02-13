@@ -55,7 +55,7 @@ class SVI(nn.Module):
     Stochastic variational inference (SVI).
     """
     base_sampler = ImportanceWeightedSampler(mc=1, iw=1)
-    def __init__(self, model, params, likelihood=F.binary_cross_entropy, beta=repeat(1), sampler=base_sampler):
+    def __init__(self, model, params, recon_loss=F.binary_cross_entropy, beta=repeat(1), sampler=base_sampler):
         """
         Initialises a new SVI optimizer for semi-
         supervised learning.
@@ -66,7 +66,7 @@ class SVI(nn.Module):
         """
         super(SVI, self).__init__()
         self.model = model
-        self.likelihood = likelihood
+        self.recon_loss = recon_loss
         self.sampler = sampler
         self.beta = beta
         self.params = params
@@ -74,51 +74,50 @@ class SVI(nn.Module):
     def forward(self, x, y=None, temperature=None, normal=0):
         is_labelled = False if y is None else True
 
-        if not is_labelled:
-            x = x.repeat(5, 1)
-        # Prepare for sampling
-        xs, ys = (x, y)
+        #if not is_labelled:
+        #    x = x.repeat(5, 1)
 
         # Enumerate choices of label
         logits, preds = self.model.classify(x)
         if not is_labelled:
             if normal:
-                ys = enumerate_discrete(xs, self.model.y_dim)
-                xs = xs.repeat(self.model.y_dim, 1)
+                y = enumerate_discrete(x, self.params.y_dim)
+                x = x.repeat(self.params.y_dim, 1)
+              
             else:
                 if temperature is None:
                     print("Error, temperatureerature not given: Exiting")
                     exit()
-                ys = gumbel_softmax(preds, temperature)
-                #ys = gumbel_multiSample(logits, temperature)
-                ys = preds
-                
-        reconstruction = self.model(xs, ys)
+              
+                #y = gumbel_softmax(preds, temperature)
+                y = gumbel_multiSample(logits, temperature)
+               
 
-        #p(x|y,z)
-        diff = reconstruction - xs
-        recon_loss = torch.sum(torch.mul(diff, diff), dim=-1)
+        reconstruction = self.model(x, y)
+
+        # p(x|y,z)
+        # diff = reconstruction - x
+        recon_loss = self.recon_loss(reconstruction, xs)#torch.sum(torch.mul(diff, diff), dim=-1)
        
-        #recon_loss = - torch.sum(torch.mul(xs, torch.log(reconstruction + 1e-5)) + torch.mul(1 - xs, torch.log(1 - reconstruction + 1e-5)), dim=-1)
+        #recon_loss = - torch.sum(torch.mul(x, torch.log(reconstruction + 1e-5)) + torch.mul(1 - x, torch.log(1 - reconstruction + 1e-5)), dim=-1)
         #if torch.mean(recon_loss) < 0:
         #    import pdb;pdb.set_trace()
         
         # p(y)
-        prior = log_standard_categorical(ys)
+        prior = log_standard_categorical(y)
 
-        #print(recon_loss)
-        L = 10*recon_loss + prior + self.model.kl_divergence * float(self.params.kl_annealling)
-        #print(L);print(recon_loss + prior + self.model.kl_divergence * float(self.params.kl_annealling));print(recon_loss);exit()
+        L = recon_loss + prior + self.model.kl_divergence #* float(self.params.kl_annealling)
+
         if is_labelled:
             return torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), np.mean(recon_loss.data.cpu().numpy()), np.mean(prior.data.cpu().numpy())
 
         if normal:
-            L = L.view_as(logits.t()).t()
-            L = torch.sum(torch.mul(logits, L), dim=-1)
+            L = L.view_as(preds.t()).t()
+            L = torch.sum(torch.mul(preds, L), dim=-1)
 
-        H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
-
+        #H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
+        H = torch.sum(torch.mul(logits, torch.log(logits + 1e-8)), dim=-1)
         # Carefully written
-        U = recon_loss + prior + self.model.kl_divergence #+ H #* float(self.model.kl_divergence)
+        U = L + H #* float(self.model.kl_divergence)
 
         return torch.mean(U) , np.mean(self.model.kl_divergence.data.cpu().numpy()), np.mean(recon_loss.data.cpu().numpy()), np.mean(H.data.cpu().numpy()), np.mean(prior.data.cpu().numpy())
