@@ -27,7 +27,7 @@ class CombineDataset(data.Dataset):
     def __getitem__(self,index):
         return self.data1[index], self.data2[index%self.size2]
 
-def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
+def get_mnist(params, location="../datasets/mnist", batch_size=64, labels_per_class=10):
 
     flatten_bernoulli = lambda x: transforms.ToTensor()(x).view(-1).bernoulli()
     mnist_train = MNIST(location, train=True, download=True,
@@ -51,7 +51,7 @@ def get_mnist(params, location="./", batch_size=64, labels_per_class=100):
     
     labelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda, sampler=get_sampler(mnist_train.train_labels.numpy(), labels_per_class))
     unlabelled = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=2, pin_memory=params.cuda, sampler=get_sampler(mnist_train.train_labels.numpy()))
-    validation = torch.utils.data.DataLoader(mnist_valid, batch_size=batch_size, num_workers=2, pin_memory=params.cuda, sampler=get_sampler(mnist_valid.test_labels.numpy()))
+    validation = torch.utils.data.DataLoader(mnist_valid, batch_size=batch_size, num_workers=2, pin_memory=params.cuda)#, sampler=get_sampler(mnist_valid.test_labels.numpy()))
 
     return labelled, unlabelled, validation
 

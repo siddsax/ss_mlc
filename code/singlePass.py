@@ -18,10 +18,8 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
   
     model.train()
 
-    for iterator, ((u, _), (x, y)) in enumerate(zip(cycle(params.unlabelled), params.labelled)):
+    for iterator, ((u, _), (x, y)) in enumerate(zip(params.unlabelled, cycle(params.labelled))):
 
-        #import pdb;pdb.set_trace()
-        
         # Parameters
         params.kl_annealling = 1 - 1.0 * np.exp(- params.step*params.factor*1e-5)
         params.temperature = max(.5, 1.0 * np.exp(- params.step*3e-5))
@@ -32,8 +30,11 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
             x, y, u = x.cuda(device=0), y.cuda(device=0), u.cuda(device=0)
 
         logits, preds = model.classify(x)
-        classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
-
+        
+        #classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)
+        classication_loss = - torch.sum(y * torch.log(preds + 1e-8), dim=1).mean()
+        
+       
         if params.ss:        
             L, kl, recon, prior = elbo(x, y=y) 
             U, klU, reconU, H, priorU = elbo(u, temperature=params.temperature, normal=params.normal)
@@ -52,7 +53,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         classication_loss = classication_loss.data.cpu().numpy()
         params.step += 1
 
-        if(iterator % int(max(len(params.unlabelled)/3, 3))==0):
+        if(iterator % int(max(len(params.unlabelled)/3, 3))==0 and 0):
             
             if kl < 0:
                 import pdb;pdb.set_trace()
@@ -65,9 +66,6 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
             ############## NOT USING ALL DATA ###############################################################
             lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile)#, testBatch=np.inf)
             #################################################################################################
-    
-        if iterator > 10 and epoch > 5:
-            break
 
     precision = 100*precision_k(y.data.cpu().numpy().squeeze(), preds.data.cpu().numpy().squeeze(), 5)
     if params.ss:
@@ -86,6 +84,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
     reconFromY = 0.0
 
     for i, (x, y) in enumerate(params.validation):
+        
         x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
         dataPts += x.shape[0]
         if dataPts > testBatch:
@@ -100,7 +99,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
         # Losses
         U, _, reconAU, _, _ = elbo(x, temperature=params.temperature, normal=params.normal)
         L, klA, reconA, _ = elbo(x, y=y)
-        lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temperature))
+        #lp, _, _, _= elbo(x, y=gumbel_multiSample(logits, params.temperature))
         classication_loss = torch.nn.functional.binary_cross_entropy(preds, y)*y.shape[-1]
         
         loss = L + params.alpha * classication_loss + U
@@ -116,7 +115,7 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
         ypred.append(preds.data.cpu().numpy().squeeze())
         ygt.append(y.data.cpu().numpy().squeeze())
         XAll.append(x.data.cpu().numpy().squeeze())
-        Lpred += lp.data.cpu().numpy()
+        Lpred += 0.0#lp.data.cpu().numpy()
         Lgt += L.data.cpu().numpy()
         reconFromY += torch.sum(torch.mul(diff, diff), dim=-1).data.cpu().numpy().mean()
         
@@ -137,4 +136,4 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
     else:
           return [P[0], mseLoss / m], ['Prec_1_Test', 'BCELossTest']
 
-# 36.6
+

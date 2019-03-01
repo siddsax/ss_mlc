@@ -97,7 +97,7 @@ class SVI(nn.Module):
 
         # p(x|y,z)
         # diff = reconstruction - x
-        recon_loss = self.recon_loss(reconstruction, xs)#torch.sum(torch.mul(diff, diff), dim=-1)
+        recon_loss = self.recon_loss(reconstruction, x)#torch.sum(torch.mul(diff, diff), dim=-1)
        
         #recon_loss = - torch.sum(torch.mul(x, torch.log(reconstruction + 1e-5)) + torch.mul(1 - x, torch.log(1 - reconstruction + 1e-5)), dim=-1)
         #if torch.mean(recon_loss) < 0:
@@ -116,7 +116,8 @@ class SVI(nn.Module):
             L = torch.sum(torch.mul(preds, L), dim=-1)
 
         #H = - (torch.sum(torch.mul(preds, torch.log(preds + 1e-8)) + torch.mul(1 - preds, torch.log(1 - preds + 1e-8)), dim=-1))
-        H = torch.sum(torch.mul(logits, torch.log(logits + 1e-8)), dim=-1)
+        H = torch.sum(torch.mul(preds, torch.log(preds + 1e-8)), dim=-1)
+        #import pdb;pdb.set_trace()
         # Carefully written
         U = L + H #* float(self.model.kl_divergence)
 

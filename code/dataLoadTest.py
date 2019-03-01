@@ -48,59 +48,25 @@ print("CUDA: {}".format(params.cuda))
 if __name__ == "__main__":
     # viz = Visualizer(params)
     if not os.path.exists('logs'):
-    	os.makedirs('logs')
+        os.makedirs('logs')
     if not os.path.exists('saved_models'):
-    	os.makedirs('saved_models')
-    
+        os.makedirs('saved_models')
+
     logFile = params.mn if len(params.mn) else str(datetime.now())
     print("=================== Name of logFile is =======    " + logFile + "     ==========")
     logFile = open('logs/' + logFile + '.logs', 'w+')
     dgm = open('models/dgm.py').read()
     logFile.write(" WE are running on " + str(params.ss) + "    ====\n")
-    logFile.write(" WE are having LR " + str(params.lr) + "    ====\n")    
+    logFile.write(" WE are having LR " + str(params.lr) + "    ====\n")
     logFile.write('=============== DGM File ===================\n\n')
     logFile.write(dgm)
     logFile.write('\n\n=============== VAE File ===================\n\n')
     logFile.write(open('models/vae.py').read())
-    
+
     params.temp = 1.0
     params.bestP = 0.0
     params.bestR = 1e10
     params = get_dataset(params)
-    params.step = 0
 
-    model = DeepGenerativeModel(params)
-    optimizer = torch.optim.Adam(model.parameters(), lr=params.lr, betas=(0.9, 0.999))
-    if(params.lm):
-        print("================= Loading Model 1 ============================")
-        model, optimizer, init = load_model(model, 'saved_models/model_best_class_' + params.mn + "_" + str(params.ss), optimizer)
-    else:
-        init = 0
-    
-    params.scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=params.step_size, gamma=0.9)
-
-    if params.cuda:
-        model = model.cuda()
-
-    elbo = SVI(model, params, recon_loss=binary_cross_entropy)
-
-    for epoch in range(init, params.epochs):
-        params.epoch = epoch
-        params.scheduler.step()
-        losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, epoch)#, viz=viz)
-        print("===== ----- Full test data  ------ =====")
-        lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
-        # losses += lossesT
-        # losses_names += losses_namesT
-
-        # lossDict = {}
-        # for key, val in zip(losses_names, losses):
-        #     lossDict[key] = val
-        # viz.plot_current_losses(epoch, lossDict)
-        print("="*100)
-
-        if lossesT[0] > params.bestP:
-            params.bestP = lossesT[0]
-            save_model(model, optimizer, params.epoch, params, "/model_best_class_" + params.mn + "_" + str(params.ss))
-
-# 34.74
+    for i, (x, y) in enumerate(params.validation):
+        import pdb;pdb.set_trace()
