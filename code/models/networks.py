@@ -86,11 +86,12 @@ class Classifier(nn.Module):
             preds = F.softmax(logits, dim=-1)[:,:,0]
             return logits, preds
         else:
-            x = F.softmax(self.logits(x), dim=-1)   ###################################
+            #x = F.softmax(self.logits(x), dim=-1)   ###################################
+            x = F.sigmoid(self.logits(x))
             try:
                 x1 = x.view(x.shape[0], x.shape[1], 1)
             except:
                 x1 = x.view(1, x.shape[0], 1)
-
+            # x = log(y/1 - y)
             logits = torch.cat((x1, 1 - x1), dim=-1)
-            return - torch.log(logits+1e-8), x
+            return logits, x
