@@ -18,8 +18,8 @@ class DeepGenerativeModel(nn.Module):
         self.featureLearn = Encoder(params)
         self.decoder = Decoder(params)
         self.classifier = Classifier(params)
-        #self.sample = sample_layer(500, params.z_dim)
-        self.sample = sample_layer(128, params.z_dim)
+        self.sample = sample_layer(500, params.z_dim)
+        #self.sample = sample_layer(128, params.z_dim)
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
