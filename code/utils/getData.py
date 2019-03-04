@@ -71,11 +71,12 @@ class Dataset(data.Dataset):
             else:
                 self.scaler = scaler
             self.x = np.load('../datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
-            self.x = self.x/self.x.max()
+
 
 	    self.y = np.load('../datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
+
         self.maxX = self.x.max()
-        self.x = (self.x - self.x.min())/(self.x.max() - self.x.min())
+        self.x = (self.x - self.x.mean())/np.std(self.x)#(self.x.max() - self.x.min())
         print(self.x.shape, self.y.shape)
     
     def __len__(self):

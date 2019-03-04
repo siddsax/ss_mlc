@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
-        params.scheduler.step()
+
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, epoch)#, viz=viz)
         print("===== ----- Full test data  ------ =====")
         lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)
