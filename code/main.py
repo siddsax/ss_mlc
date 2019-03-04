@@ -23,7 +23,6 @@ np.random.seed(1337)
 
 params = argparse.ArgumentParser(description='Process some integers.')
 params.add_argument('--ss', dest='ss', type=int, default=1, help='1 to do semi-super, 0 for not doing it')
-params.add_argument('--oss', dest='oss', type=int, default=0, help='1 to ONLY do semi-super')
 params.add_argument('--ld', dest='ld', type=int, default=0, help='1 to load model')
 params.add_argument('--normal', action="store_true", default=False, help='1 to do semi-super, 0 for not doing it')
 params.add_argument('--ds', dest='data_set', type=str, default="mnist", help='mnist; delicious;')
@@ -36,7 +35,7 @@ params.add_argument('--f', dest='factor', type=float, default=5, help='mnist; de
 params.add_argument('--t', dest='twoOut', type=float, default=0, help='mnist; delicious;')
 params.add_argument('--lr', dest='lr', type=float, default=3e-4, help='mnist; delicious;')
 params.add_argument('--new', type=int, default=0, help='mnist; delicious;')
-params.add_argument('--epochs', type=int, default=2500, help='num epochs')
+params.add_argument('--epochs', type=int, default=5000, help='num epochs')
 params.add_argument('--step_size', type=int, default=5, help='num epochs')
 params.add_argument('--z_dim', type=int, default=32, help='latent layer dimension')
 
@@ -86,7 +85,7 @@ if __name__ == "__main__":
 
     for epoch in range(init, params.epochs):
         params.epoch = epoch
-        params.scheduler.step()
+        #params.scheduler.step()
         losses, losses_names = modelTrPass(model, optimizer, elbo, params, logFile, epoch)#, viz=viz)
         print("===== ----- Full test data  ------ =====")
         lossesT, losses_namesT = modelTePass(model, elbo, params, optimizer, logFile, testBatch=np.inf)

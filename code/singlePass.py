@@ -31,8 +31,8 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
 
         logits, preds = model.classify(x)
         
-        #classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y)
-        classication_loss = - torch.sum(y * torch.log(preds + 1e-8), dim=1).mean()
+        classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y) *y.shape[-1]
+        #classication_loss = - torch.sum(y * torch.log(preds + 1e-8), dim=1).mean()
         
        
         if params.ss:        
@@ -84,7 +84,8 @@ def modelTePass(model, elbo, params, optimizer, logFile, testBatch=5000):
     reconFromY = 0.0
 
     for i, (x, y) in enumerate(params.validation):
-        
+
+        #import pdb;pdb.set_trace()        
         x, y = Variable(x).squeeze().float(), Variable(y).squeeze().float()
         dataPts += x.shape[0]
         if dataPts > testBatch:

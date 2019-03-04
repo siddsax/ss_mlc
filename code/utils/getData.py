@@ -71,11 +71,15 @@ class Dataset(data.Dataset):
             else:
                 self.scaler = scaler
             self.x = np.load('../datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
-            self.x = self.x/self.x.max()
+            #import pdb;pdb.set_trace()
+            #self.x = (self.x - self.x.min())/(self.x.max() - self.x.min())
 
-	    self.y = np.load('../datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
+            self.y = np.load('../datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
+
         self.maxX = self.x.max()
-        self.x = (self.x - self.x.min())/(self.x.max() - self.x.min())
+        #self.x = (self.x - self.x.min())/(self.x.max() - self.x.min())
+        self.x = (self.x - self.x.mean()) /np.std(self.x)
+        #self.x = self.x / np.linalg.norm(self.x)
         print(self.x.shape, self.y.shape)
     
     def __len__(self):
@@ -135,10 +139,10 @@ def get_dataset(params):
         
         args = {'batch_size': params.mb,
             'shuffle': True,
-            'num_workers': 2}
+            'num_workers': 0}
         argsL = {'batch_size': max(2, params.mb//(len(params.unlabelled)/len(params.labelled))),
             'shuffle': True,
-            'num_workers': 1}
+            'num_workers': 0}
 
 
         params.y_dim = params.labelled.getClasses()

@@ -18,7 +18,7 @@ class DeepGenerativeModel(nn.Module):
         self.featureLearn = Encoder(params)
         self.decoder = Decoder(params)
         self.classifier = Classifier(params)
-        self.sample = sample_layer(500, params.z_dim)
+        self.sample = sample_layer(300, params.z_dim)
         #self.sample = sample_layer(128, params.z_dim)
 
         for m in self.modules():
@@ -63,8 +63,8 @@ class DeepGenerativeModel(nn.Module):
 
         #hidden = self.featureLearn(x)
         #logits = self.classifier(hidden)
-        logits = self.classifier(x)
-        return logits
+        logProbs, preds = self.classifier(x)
+        return logProbs, preds
 
     def kl(self, z_mean, z_log_var):
 

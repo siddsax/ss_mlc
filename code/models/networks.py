@@ -13,9 +13,9 @@ class Encoder(nn.Module):
         inputDim = params.x_dim + params.y_dim
         self.bn_cat = nn.BatchNorm1d(inputDim)
 
-        self.fc_1 = nn.Linear(inputDim, 2000)
-        self.fc_2 = nn.Linear(2000, 500)
-        self.fc_3 = nn.Linear(500, 500)
+        self.fc_1 = nn.Linear(inputDim, 400)
+        self.fc_2 = nn.Linear(400, 300)
+        #self.fc_3 = nn.Linear(500, 500)
 
         #self.fc_1 = nn.Linear(inputDim, 256)
         #self.fc_2 = nn.Linear(256, 128)
@@ -23,10 +23,10 @@ class Encoder(nn.Module):
 
     def forward(self, x):
 
-        #x = self.bn_cat(x)
+        x = self.bn_cat(x)
         x = F.relu(self.fc_1(x))
         x = F.relu(self.fc_2(x))
-        x = F.relu(self.fc_3(x))
+        #x = F.relu(self.fc_3(x))
 
         return x
 
@@ -36,14 +36,14 @@ class Decoder(nn.Module):
 
         inputDim = params.z_dim + params.y_dim
         
-        self.fc_1 = nn.Linear(inputDim, 500)
-        self.fc_2 = nn.Linear(500, 500)
-        self.fc_3 = nn.Linear(500, 2000)
+        self.fc_1 = nn.Linear(inputDim, 300)
+        self.fc_2 = nn.Linear(300, 400)
+        #self.fc_3 = nn.Linear(500, 2000)
         
         #self.fc_1 = nn.Linear(inputDim, 128)
         #self.fc_2 = nn.Linear(128, 256)
 
-        self.reconstruction = nn.Linear(2000, params.x_dim)
+        self.reconstruction = nn.Linear(400, params.x_dim)
         #self.reconstruction = nn.Linear(256, params.x_dim)
 
         self.output_activation = nn.Sigmoid()
@@ -52,10 +52,10 @@ class Decoder(nn.Module):
 
         x = F.relu(self.fc_1(x))
         x = F.relu(self.fc_2(x))
-        x = F.relu(self.fc_3(x))
+        #x = F.relu(self.fc_3(x))
         x = self.reconstruction(x)
 
-        return self.output_activation(x)
+        return x#self.output_activation(x)
 
 class Classifier(nn.Module):
     def __init__(self, params):
@@ -64,23 +64,24 @@ class Classifier(nn.Module):
 
         self.twoOut = params.twoOut
         self.drp_5 = nn.Dropout(.5)
-        self.fc_1 = nn.Linear(params.x_dim, 2000)
-        self.fc_2 = nn.Linear(2000, 500)
-        self.fc_3 = nn.Linear(500, 500)
+        self.fc_1 = nn.Linear(params.x_dim, 900)
+        self.fc_2 = nn.Linear(900, 600)
+        #self.fc_3 = nn.Linear(500, 500)
 
         #self.fc_1 = nn.Linear(params.x_dim, 256)      
 
-        self.logits = nn.Linear(500, params.y_dim)
+        self.logits = nn.Linear(600, params.y_dim)
         #self.logits = nn.Linear(256, params.y_dim)
-        self.logitsP = nn.Linear(500, params.y_dim)
-        self.logitsN = nn.Linear(500, params.y_dim)
+        self.logitsP = nn.Linear(600, params.y_dim)
+        self.logitsN = nn.Linear(600, params.y_dim)
         self.bn = nn.BatchNorm1d(500)
 
     def forward(self, x):
 
         x = F.relu(self.fc_1(x))
+        x = self.drp_5(x)
         x = F.relu(self.fc_2(x))
-        x = F.relu(self.fc_3(x))
+        #x = F.relu(self.fc_3(x))
 
         if self.twoOut:
             predsP = self.logitsP(x)
@@ -98,5 +99,7 @@ class Classifier(nn.Module):
             except:
                 x1 = x.view(1, x.shape[0], 1)
             # x = log(y/1 - y)
-            logits = torch.cat((x1, 1 - x1), dim=-1)
-            return logits, x
+            logProbs = torch.log(torch.cat((x1, 1 - x1), dim=-1))
+            #logProbs = torch.cat((x1, 1 - x1), dim=-1)
+
+            return logProbs, x

@@ -27,42 +27,43 @@ ty = ty[index_shuf]
 
 N = ty.shape[0]
 nf = int(params.percentage*N/100.0)
-x = x[:nf]
-ty = ty[:nf]
-# labels_num = np.sum(ty,axis=0)
-# removed_indices = []
-# N = ty.shape[0]
-# n_now = N
-# labels_num = np.sum(ty,axis=0)
-# not_zero = np.argwhere(labels_num!=0)
+#x = x[:nf]
+#ty = ty[:nf]
 
-# print(ty.shape)
+labels_num = np.sum(ty,axis=0)
+removed_indices = []
+N = ty.shape[0]
+n_now = N
+labels_num = np.sum(ty,axis=0)
+not_zero = np.argwhere(labels_num!=0)
 
-# trigger = 0
-# while (ty.shape[0] > nf):
+print(ty.shape)
 
-#         candidate = labels_num - ty[0]
-#         not_zero = np.argwhere(labels_num!=0)[0,:]
+trigger = 0
+while (ty.shape[0] > nf):
 
-#     # if(len(np.argwhere(candidate[not_zero]==0))==0):
-# 	print("="*10 + " "*5 + str(ty.shape[0]) + "/" + str(nf) +" "*5 + "="*10)
-# 	labels_num = candidate
-# 	ty = ty[1:]
-# 	x = x[1:]
-# 	print('-'*10)
-# 	trigger = 0
-# 	# else:
-# 	# 	trigger +=1	
-# 	# 	if sprse:
-# 	# 		ty = sparse.vstack((ty[1:], ty[0]))
-# 	# 		x = sparse.vstack((x[1:], x[0]))
-# 	# 	else:
-# 	# 		ty = np.concatenate((ty[1:], ty[0].reshape((1, ty[0].shape[0]))), axis=0)
-# 	# 		x = np.concatenate((x[1:], x[0].reshape((1, x[0].shape[0]))), axis=0)
-# 	# 	print("Num labels offended: " +str(len(np.argwhere(candidate[not_zero]==0))))
-    
-# 	if trigger > ty.shape[0]/10:
-# 		break
+     candidate = labels_num - ty[0]
+     not_zero = np.argwhere(labels_num!=0)
+
+     if(len(np.argwhere(candidate[not_zero]==0))==0):
+ 	print("="*10 + " "*5 + str(ty.shape[0]) + "/" + str(nf) +" "*5 + "="*10)
+ 	labels_num = candidate
+ 	ty = ty[1:]
+ 	x = x[1:]
+	print('-'*10)
+ 	trigger = 0
+     else:
+ 	trigger +=1	
+ 	if sprse:
+ 		ty = sparse.vstack((ty[1:], ty[0]))
+ 		x = sparse.vstack((x[1:], x[0]))
+ 	else:
+ 		ty = np.concatenate((ty[1:], ty[0].reshape((1, ty[0].shape[0]))), axis=0)
+ 		x = np.concatenate((x[1:], x[0].reshape((1, x[0].shape[0]))), axis=0)
+ 	print("Num labels offended: " +str(len(np.argwhere(candidate[not_zero]==0))))
+   
+ 	if trigger > ty.shape[0]:
+ 		break
 
 print(x.shape, ty.shape)
 

@@ -78,7 +78,7 @@ class SVI(nn.Module):
         #    x = x.repeat(5, 1)
 
         # Enumerate choices of label
-        logits, preds = self.model.classify(x)
+        logProbs, preds = self.model.classify(x)
         if not is_labelled:
             if normal:
                 y = enumerate_discrete(x, self.params.y_dim)
@@ -91,17 +91,18 @@ class SVI(nn.Module):
 
                 x = x.repeat(5, 1)
                 preds = preds.repeat(5, 1)
-                logits = logits.repeat(5, 1, 1)
+                logProbs = logProbs.repeat(5, 1, 1)
 
                 #y = gumbel_softmax(preds, temperature)
-                y = gumbel_multiSample(logits, temperature)
-               
+                y = gumbel_multiSample(logProbs, temperature)
+                #y = preds
 
         reconstruction = self.model(x, y)
 
         # p(x|y,z)
-        # diff = reconstruction - x
-        recon_loss = self.recon_loss(reconstruction, x)#torch.sum(torch.mul(diff, diff), dim=-1)
+        diff = reconstruction - x
+        #recon_loss = self.recon_loss(reconstruction, x)#torch.sum(torch.mul(diff, diff), dim=-1)
+        recon_loss = torch.sum(torch.mul(diff, diff), dim=-1)
        
         #recon_loss = - torch.sum(torch.mul(x, torch.log(reconstruction + 1e-5)) + torch.mul(1 - x, torch.log(1 - reconstruction + 1e-5)), dim=-1)
         #if torch.mean(recon_loss) < 0:
@@ -110,7 +111,7 @@ class SVI(nn.Module):
         # p(y)
         prior = log_standard_categorical(y)
 
-        L = recon_loss + prior + self.model.kl_divergence #* float(self.params.kl_annealling)
+        L = recon_loss + prior + self.model.kl_divergence * float(self.params.kl_annealling)
 
         if is_labelled:
             return torch.mean(L) , np.mean(self.model.kl_divergence.data.cpu().numpy()), np.mean(recon_loss.data.cpu().numpy()), np.mean(prior.data.cpu().numpy())
