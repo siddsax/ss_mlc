@@ -32,9 +32,7 @@ def modelTrPass(model, optimizer, elbo, params, logFile, epoch, viz=None):
         logits, preds = model.classify(x)
         
         classication_loss = params.alpha * torch.nn.functional.binary_cross_entropy(preds, y) *y.shape[-1]
-        #classication_loss = - torch.sum(y * torch.log(preds + 1e-8), dim=1).mean()
-        
-       
+
         if params.ss:        
             L, kl, recon, prior = elbo(x, y=y) 
             U, klU, reconU, H, priorU = elbo(u, temperature=params.temperature, normal=params.normal)

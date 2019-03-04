@@ -61,7 +61,6 @@ class Dataset(data.Dataset):
 
         if(self.sparse):
             self.x = sparse.load_npz('../datasets/' + params.data_set + '/x_' + dtype + '.npz').astype('float32')
-            self.x = self.x/self.x.max()
             self.y = sparse.load_npz('../datasets/' + params.data_set + '/y_' + dtype + '.npz').astype('float32')
         else:
             if scaler is None:
@@ -71,15 +70,10 @@ class Dataset(data.Dataset):
             else:
                 self.scaler = scaler
             self.x = np.load('../datasets/' + params.data_set + '/x_' + dtype + '.npy').astype('float32')
-            #import pdb;pdb.set_trace()
-            #self.x = (self.x - self.x.min())/(self.x.max() - self.x.min())
 
             self.y = np.load('../datasets/' + params.data_set + '/y_' + dtype + '.npy').astype('float32')
 
-        self.maxX = self.x.max()
-        #self.x = (self.x - self.x.min())/(self.x.max() - self.x.min())
         self.x = (self.x - self.x.mean()) /np.std(self.x)
-        #self.x = self.x / np.linalg.norm(self.x)
         print(self.x.shape, self.y.shape)
     
     def __len__(self):
@@ -125,7 +119,6 @@ def get_dataset(params):
         params.x_dim = params.labelled.getDims()
         params.labelled = data.DataLoader(params.labelled, **args)
         params.unlabelled = data.DataLoader(Dataset(params, "tr", 1), **args)
-        params.maxX = Dataset(params, "tr", 1).maxX
         params.validation = data.DataLoader(Dataset(params, "te", 1), **args)
 
     else:# params.data_set=="delicious" or params.data_set == "bibtex":
@@ -147,7 +140,6 @@ def get_dataset(params):
 
         params.y_dim = params.labelled.getClasses()
         params.x_dim = params.labelled.getDims()
-        params.maxX = params.unlabelled.maxX
 
         params.unlabelled = data.DataLoader(params.unlabelled, **args)
         params.labelled = data.DataLoader(params.labelled, **args)

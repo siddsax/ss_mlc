@@ -55,7 +55,7 @@ class Decoder(nn.Module):
         #x = F.relu(self.fc_3(x))
         x = self.reconstruction(x)
 
-        return x#self.output_activation(x)
+        return x
 
 class Classifier(nn.Module):
     def __init__(self, params):
@@ -100,6 +100,4 @@ class Classifier(nn.Module):
                 x1 = x.view(1, x.shape[0], 1)
             # x = log(y/1 - y)
             logProbs = torch.log(torch.cat((x1, 1 - x1), dim=-1))
-            #logProbs = torch.cat((x1, 1 - x1), dim=-1)
-
             return logProbs, x
