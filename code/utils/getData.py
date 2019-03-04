@@ -136,10 +136,10 @@ def get_dataset(params):
         
         args = {'batch_size': params.mb,
             'shuffle': True,
-            'num_workers': 2}
+            'num_workers': 0}
         argsL = {'batch_size': max(2, params.mb//(len(params.unlabelled)/len(params.labelled))),
             'shuffle': True,
-            'num_workers': 1}
+            'num_workers': 0}
 
 
         params.y_dim = params.labelled.getClasses()
